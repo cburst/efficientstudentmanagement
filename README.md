@@ -2,7 +2,9 @@
 This is a group of python scripts that can help reduce time required for educators to complete administrative tasks.
 
 First, add current versions of gpt-cli (https://github.com/kharvd/gpt-cli), my-voice-analysis (https://github.com/Shahabks/my-voice-analysis), and L2SCA (https://www.dropbox.com/scl/fi/kim1jb151ii4e711zb6to/L2SCA-2023-08-15.tgz?rlkey=uqwsr96jpxnr5ucbgta5nwypz&st=blyfw6n0&dl=0) as subfolders in the folder entitled 'folders'
-Second, verify that each of those software packages, as well as python 3.11, is install correctly
+
+Second, verify that each of those software packages, as well as python 3.11, is installed correctly
+
 Third, copy necessary input files to 'input-files' folders, such as 'w01prompts.tsv' (containing two columns, one with student numbers, the other with the entire prompt include student text for each student number), 'w01raw.tsv' (containing two columns, one with student numbers, the other with the entire text sample for each student number), and a folder containing audio files in any format 'w01' (containing audio files, where each file name begins with a student number).
 
 Here is the syntax for the most important scripts:
