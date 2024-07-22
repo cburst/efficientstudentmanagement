@@ -8,8 +8,12 @@ Third, copy necessary input files to 'input-files' folders, such as 'w01prompts.
 Here is the syntax for the most important scripts:
 
 python3 GPT.py [prompts file reference in TSV format, such as w01prompts.tsv] w01
+
 python3 L2SCA.py [raw text file reference in TSV format, such as w01raw.tsv] w01
+
 python3 PRAAT.py [audio file folder name reference] w01
+
+
 
 Additional scripts include:
 
