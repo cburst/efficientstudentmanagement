@@ -17,24 +17,30 @@ python3 PRAAT.py [audio file folder name reference] w01
 
 
 
-Additional scripts include:
+Additional scripts
 
 audio file formatting:
+
 audiodownloader: takes a CSV file with student numbers in one column and GoogleDrive links in another column, uses Google Chrome (with an extension that automatically downloads Google Drive files), downloads files to ~/Downloads, and prepends student numbers
 
 checking for plagiarism:
+
 concat_check: takes a TSV file with three columns, one with student numbers, one with text for comparison (e.g., all previous text written by a particular student), one with text of interest (e.g., a recent assignment).
 disc_similarlity_check, hw_similarity_check, and plagiarism_detection_on_two_folders are similar to concat_check (but for different assignment structures, intended as example scripts only)
 
 formatting text for GetMarked:
+
 getmarkedformatter: takes text where questions are on one line and answers are on another line of a text file, and formats them so they can be used with GetMarked, where each answer choice is on its own line
 
 creating tests from question banks:
+
 shufflequestions: takes two text files containing GetMarked formatted questions, randomly selects 15 questions from each question bank, shuffles them, and adds them to a single formatted text file for use with GetMarked.
 
 formatting forms:
+
 AppScript_customgetmarkedscript: paste AppsScript code from GetMarked into this AppsScript template to use with a template form (requires a previously saved template form in Google Drive; you can add details into this form that you want to appear in every form, such as collecting student numbers, email addresses, and other form settings like allowing response editing, showing which responses are incorrect, etc.)
 
 extracting comment data from Google Docs:
+
 AppScript_commentharvester: use this AppsScript in Google Sheets to retrieve information associated with Google Docs files, such as author name, comment author name, and comment content (allows for content analysis of Google Docs meta data).
 
