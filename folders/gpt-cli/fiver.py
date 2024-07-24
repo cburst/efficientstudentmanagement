@@ -72,7 +72,6 @@ def count_occurrences(filename, csv_file):
 def get_file_size(file):
     return os.stat(file).st_size
 
-
 def process_files(working_directory, csv_file):
     # Log the start of processing
     print(f"Starting to process files in {working_directory}")
@@ -97,11 +96,11 @@ def process_files(working_directory, csv_file):
             # print(f"Running command: {' '.join(command)}")  # Log the command being run
             output = subprocess.run(command, capture_output=True, text=True).stdout
             output_escaped = output.replace('"', '""')
-            
+
             # Log the completion of the subprocess
             print(f"Command completed for {i}.")  # Log command completion
-           timestamp_output = datetime.now().strftime('%m-%d %H:%M:%S')
-           print(f"[{timestamp_output}] (output size: {len(output)} characters)")  # Log output size
+            timestamp_output = datetime.now().strftime('%m-%d %H:%M:%S')
+            print(f"[{timestamp_output}] (output size: {len(output)} characters)")  # Log output size
 
             # Writing results to CSV
             with open(csv_file, mode='a', newline='', encoding='utf-8') as file:
