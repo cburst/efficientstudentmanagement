@@ -4,6 +4,7 @@ import time
 import csv
 import subprocess
 import sys
+from datetime import datetime
 
 def main():
     # Check if the directory argument is provided
@@ -84,19 +85,23 @@ def process_files(working_directory, csv_file):
             try:
                 with open(i_path, 'r', encoding="utf-8", errors="ignore") as file:
                     content = file.read().replace('\x00', '')  # Remove null bytes
-                print(f"Read content from {i} (size: {len(content)} characters)")  # Log file read success
+                print(f"Read content from {i}")  # Log file read success
+                timestamp_input = datetime.now().strftime('%m-%d %H:%M:%S')
+                print(f"[{timestamp_input}] (input size: {len(content)} characters)")  # Log file read success
             except UnicodeDecodeError:
                 print(f"Error decoding file: {i_path}")  # Log decoding error
                 continue
 
             # Running a subprocess to process the file content
-            command = [sys.executable, 'gpt.py', '-p', content, '--model', 'gpt-4o']
+            command = [sys.executable, 'gpt.py', '-p', content, '--model', 'gemini-1.5-pro']
             # print(f"Running command: {' '.join(command)}")  # Log the command being run
             output = subprocess.run(command, capture_output=True, text=True).stdout
             output_escaped = output.replace('"', '""')
             
             # Log the completion of the subprocess
-            print(f"Command completed for {i}. Output size: {len(output)} characters")
+            print(f"Command completed for {i}.")  # Log command completion
+           timestamp_output = datetime.now().strftime('%m-%d %H:%M:%S')
+           print(f"[{timestamp_output}] (output size: {len(output)} characters)")  # Log output size
 
             # Writing results to CSV
             with open(csv_file, mode='a', newline='', encoding='utf-8') as file:

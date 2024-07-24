@@ -90,7 +90,7 @@ def process_files(working_directory, csv_file):
                 continue
 
             # Running a subprocess to process the file content
-            command = [sys.executable, 'gpt.py', '-p', content, '--model', 'claude-3-sonnet-20240229']
+            command = [sys.executable, 'gpt.py', '-p', content, '--model', 'gemini-1.5-pro']
             # print(f"Running command: {' '.join(command)}")  # Log the command being run
             output = subprocess.run(command, capture_output=True, text=True).stdout
             output_escaped = output.replace('"', '""')
