@@ -6,6 +6,7 @@ import subprocess
 import sys
 from datetime import datetime
 from colorama import init, Fore, Style
+import time
 
 # Initialize colorama
 init(autoreset=True)
@@ -38,7 +39,7 @@ def main():
                 filename = os.path.basename(file_path)
                 count = count_occurrences(filename, csv_file)
 
-                print(Fore.MAGENTA + f"File: {filename}, Count: {count}")  # Debugging line
+                print(Fore.BLUE + f"File: {filename}, Count: {count}")  # Debugging line
 
                 if count < 5:
                     all_files_met_condition = False
@@ -56,7 +57,7 @@ def main():
 
         # Check if the condition is met for all files
         if all_files_met_condition:
-            print(Fore.GREEN + "All files have appeared 5 times in the CSV.")
+            print(Fore.BLUE + "All files have appeared 5 times in the CSV.")
             break
 
         # Optional: Add a delay to avoid rapid, continuous execution
@@ -84,37 +85,38 @@ def process_files(working_directory, csv_file):
     for i in os.listdir(working_directory):
         i_path = os.path.join(working_directory, i)
         if os.path.isfile(i_path) and get_file_size(i_path) > 25:
-            print(Fore.MAGENTA + f"Processing file: {i}")  # Log the file being processed
+            print(Fore.CYAN + f"Processing file: {i}")  # Log the file being processed
 
             try:
                 with open(i_path, 'r', encoding="utf-8", errors="ignore") as file:
                     content = file.read().replace('\x00', '')  # Remove null bytes
-                print(Fore.GREEN + f"Read content from {i}")  # Log file read success
+                print(Fore.BLUE + f"Read content from {i}")  # Log file read success
                 timestamp_input = datetime.now().strftime('%m-%d %H:%M:%S')
-                print(Fore.BLUE + f"[{timestamp_input}] " + Fore.GREEN + f"(input size: {len(content)} characters)")  # Log file read success
+                print(Fore.BLUE + f"[{timestamp_input}] (input size: {len(content)} characters)")  # Log input size
             except UnicodeDecodeError:
                 print(Fore.RED + f"Error decoding file: {i_path}")  # Log decoding error
                 continue
 
             # Running a subprocess to process the file content
             command = [sys.executable, 'gpt.py', '-p', content, '--model', 'claude-3-sonnet-20240229']
-            # print(f"Running command: {' '.join(command)}")  # Log the command being run
             output = subprocess.run(command, capture_output=True, text=True).stdout
             output_escaped = output.replace('"', '""')
             
             # Log the completion of the subprocess
-            print(Fore.CYAN + f"Command completed for {i}.")  # Log command completion
+            print(Fore.BLUE + f"Command completed for {i}.")  # Log command completion
             timestamp_output = datetime.now().strftime('%m-%d %H:%M:%S')
-            print(Fore.BLUE + f"[{timestamp_output}] " + Fore.GREEN + f"(output size: {len(output)} characters)")  # Log output size
+            print(Fore.CYAN + f"[{timestamp_output}] " + Style.BRIGHT + Fore.GREEN + f"(output size: {len(output)} characters)")  # Log output size
+            time.sleep(45)
+            print(Style.RESET_ALL, end="")  # Reset the color back to normal after the message
 
             # Writing results to CSV
             with open(csv_file, mode='a', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
                 writer.writerow([os.path.basename(i), output_escaped])
-                print(Fore.GREEN + f"Logged output to CSV for {i}")  # Log successful write to CSV
+                print(Fore.BLUE + f"Logged output to CSV for {i}")  # Log successful write to CSV
 
     # Log the end of processing
-    print(Fore.CYAN + f"Finished processing all eligible files in {working_directory}")
+    print(Fore.CYAN + f"Finished processing all eligible files in {working_directory} using ANTHO LLM")
 
 if __name__ == "__main__":
     main()

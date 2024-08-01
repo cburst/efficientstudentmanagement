@@ -3,6 +3,10 @@ import csv
 import sys
 import os
 
+def clean_specific_string(text):
+    # Remove the specific string "between two @ symbols"
+    return text.replace("between two @ symbols", "")
+
 def filter_csv(file_path):
     # Pattern to match strings with one or more occurrences of one, two, or three digits between @ symbols (e.g., @1@, @@1@@, @999@, or @@999@@) and no other @ symbols
     pattern = re.compile(r'([^@]*@{1,2}\d{1,3}@{1,2}[^@]*)+')
@@ -19,9 +23,11 @@ def filter_csv(file_path):
         lines = []
         for row in reader:
             total_lines += 1
+            # Remove the specific string "between two @ symbols" from each cell
+            cleaned_row = [clean_specific_string(cell) for cell in row]
             # Filter rows that match the regex pattern
-            if any(pattern.search(cell) for cell in row):
-                lines.append(row)
+            if any(pattern.search(cell) for cell in cleaned_row):
+                lines.append(cleaned_row)
             else:
                 at_violations += 1
                 removed_lines += 1
