@@ -44,3 +44,7 @@ AppScript_customgetmarkedscript: paste AppsScript code from GetMarked into this 
 
 AppScript_commentharvester: use this AppsScript in Google Sheets to retrieve information associated with Google Docs files, such as author name, comment author name, and comment content (allows for content analysis of Google Docs meta data).
 
+
+-citation:
+Rose, R. (2024). Improving engineering students’ grammatical accuracy in writing through LLM-assisted ipsative assessment. Manuscript in preparation.
+
