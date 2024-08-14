@@ -46,9 +46,11 @@ AppScript_googledocsfunctions: use this AppsScript in Google Sheets to retrieve 
 
 
 -citation:
+
 Rose, R. (2024). Improving syntactic complexity in engineering 
 students’ writing through digital portfolios and visual analytics. 
 Manuscript in preparation.
+
 
 Rose, R. (2024). Improving grammatical accuracy through 
 instructor, peer, and LLM-assisted corrective feedback. 
