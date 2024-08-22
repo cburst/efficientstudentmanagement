@@ -35,6 +35,9 @@ def main():
     shutil.copy(destination_file, subfolder_destination_file)
     print(f"Copied to subfolder: '{subfolder_destination_file}'.")
 
+    # Remove any files in the subdirectory with a size of less than 20 bytes
+    remove_small_files(subdirectory_path)
+
     process_tsv_with_python(subfolder_destination_file)
 
     if os.path.exists("Student Number.txt"):
@@ -63,6 +66,14 @@ def main():
 
     # Cleanup: delete the {d} directory and the TSV file from the L2SCA folder
     cleanup(subdirectory_path, destination_file)
+
+def remove_small_files(directory, size_limit=20):
+    """Remove files in the directory that are smaller than the size_limit (in bytes)."""
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath) and os.path.getsize(filepath) < size_limit:
+            print(f"Removing {filepath} (Size: {os.path.getsize(filepath)} bytes)")
+            os.remove(filepath)
 
 def process_tsv_with_python(tsv_file):
     base_dir = os.getcwd()  # Ensure base directory is set
