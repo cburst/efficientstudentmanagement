@@ -30,6 +30,7 @@ def main():
 
     while True:
         all_files_met_condition = True
+        total_missing_references = 0
 
         # Loop through each file in the directory
         for file in os.listdir(file_directory):
@@ -42,6 +43,7 @@ def main():
 
                 if count < 5:
                     all_files_met_condition = False
+                    total_missing_references += (5 - count)
                     # Copy file to working directory if not already there
                     if not os.path.exists(os.path.join(working_directory, filename)):
                         shutil.copy(file_path, working_directory)
@@ -49,6 +51,8 @@ def main():
                     # Delete file from working directory if it's there
                     if os.path.exists(os.path.join(working_directory, filename)):
                         os.remove(os.path.join(working_directory, filename))
+
+        print(Fore.GREEN + f"Total number of remaining missing references: {total_missing_references}")
 
         # Run the file processing only if any file needs processing
         if not all_files_met_condition:
@@ -61,7 +65,6 @@ def main():
 
         # Optional: Add a delay to avoid rapid, continuous execution
         time.sleep(5)
-
 
 def count_occurrences(filename, csv_file):
     count = 0

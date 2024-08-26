@@ -4,8 +4,8 @@ import sys
 import os
 
 def clean_specific_string(text):
-    # Remove the specific string "between two @ symbols"
-    return text.replace("between two @ symbols", "")
+    # Remove the specific string "between two @ symbols" case-insensitively
+    return re.sub(r"between two @ symbols", "", text, flags=re.IGNORECASE)
 
 def filter_csv(file_path):
     # Pattern to match strings with one or more occurrences of one, two, or three digits between @ symbols (e.g., @1@, @@1@@, @999@, or @@999@@) and no other @ symbols
