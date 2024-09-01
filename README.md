@@ -44,6 +44,10 @@ AppScript_customgetmarkedscript: paste AppsScript code from GetMarked into this 
 
 AppScript_googledocsfunctions: use this AppsScript in Google Sheets to retrieve information associated with Google Docs files, such as author name, comment author name, and comment content (allows for content analysis of Google Docs meta data).
 
+-usining the Speechify API to generate audio from text:
+
+speechifyapi: use this Python script to generate mp3 audio from text provided between quotation marks in the command line. This script requires a Speechify API key, and allows for a selection among 44 different voices, each of which features high quality audio from a wide variety of genders, nationalities, and speaking styles.
+
 
 -citation:
 
