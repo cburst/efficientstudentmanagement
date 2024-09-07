@@ -41,7 +41,6 @@ write_to_profiles() {
     echo "export PATH=\"/opt/homebrew/opt/python@3.11/bin:\$PATH\"" >> "$HOME/$profile"
     echo "alias python3='/opt/homebrew/opt/python@3.11/bin/python3.11'" >> "$HOME/$profile"
     echo "alias pip3='/opt/homebrew/opt/python@3.11/bin/pip3.11'" >> "$HOME/$profile"
-    echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/$profile"
 }
 
 # 5. Ask the user for the API key and set it as a global environment variable
@@ -50,9 +49,14 @@ if [ -z "$API_KEY" ]; then
     handle_error "No API key provided."
 fi
 
-# Write to both .bash_profile and .zshrc
-write_to_profiles ".bash_profile"
-write_to_profiles ".zshrc"
+# Write the API key to both .bash_profile and .zshrc
+add_api_key_to_profiles() {
+    local profile="$1"
+    echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/$profile"
+}
+
+add_api_key_to_profiles ".bash_profile"
+add_api_key_to_profiles ".zshrc"
 
 # Source both profiles to apply the changes
 source "$HOME/.bash_profile"
