@@ -9,15 +9,21 @@ function handle_error {
 # 1. Install Homebrew if not already installed
 if ! command -v brew &> /dev/null; then
     echo "Homebrew not found. Installing Homebrew..."
-    echo "You may be prompted for your password during the Homebrew installation."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || handle_error "Failed to install Homebrew."
+    
+    # Add Homebrew to PATH
+    echo "Adding Homebrew to PATH..."
+    (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> "$HOME/.zprofile"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+
+    # Source the profile to make changes take effect
+    source "$HOME/.zprofile"
 else
     echo "Homebrew is already installed."
 fi
 
-# 2. Install Python 3.11.9 using Homebrew
-echo "Installing Python 3.11.9 via Homebrew..."
-echo "You may be prompted for your password during the Python installation."
+# 2. Install Python 3.11 using Homebrew
+echo "Installing Python 3.11 via Homebrew..."
 brew install python@3.11 || handle_error "Failed to install Python 3.11."
 
 # 3. Ensure Python 3.11 is the default version
@@ -110,23 +116,20 @@ fi
 echo "Setting the OPENAI_API_KEY environment variable..."
 if [ -f "$HOME/.bash_profile" ]; then
     echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/.bash_profile"
+    source "$HOME/.bash_profile" || handle_error "Failed to set OPENAI_API_KEY in bash profile."
 fi
 if [ -f "$HOME/.zshrc" ]; then
     echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/.zshrc"
+    source "$HOME/.zshrc" || handle_error "Failed to set OPENAI_API_KEY in zsh profile."
 fi
 
 # 14. Test Python installation
 echo "Testing Python installation..."
 python3 -c "print('Python installation successful!')" || handle_error "Failed to test Python installation."
 
-# 15. Launch a new terminal to test GPT-CLI with a refreshed environment
-echo "Testing GPT-CLI in a new terminal session..."
+# 15. Test GPT-CLI
+echo "Testing GPT-CLI..."
+cd "$TARGET_DIR/folders/gpt-cli"
+python3 gpt.py || handle_error "Failed to run GPT-CLI test."
 
-osascript <<EOD
-tell application "Terminal"
-    do script "cd $TARGET_DIR/folders/gpt-cli && source ~/.zshrc && python3 gpt.py"
-end tell
-EOD
-
-echo "Please restart your terminal to fully apply the changes in this session, or you can start a new session with the desktop shortcut."
 echo "Setup complete! You can now double-click the .command file on your Desktop to open the project."
