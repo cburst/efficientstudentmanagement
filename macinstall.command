@@ -121,24 +121,12 @@ if [ -f "$HOME/.zshrc" ]; then
     echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/.zshrc"
 fi
 
-# 14. Test Python installation with dynamically detected Python path
-echo "Testing Python installation..."
-
-# Detect the Python 3.11 installation path
-PYTHON_PATH=$(brew --prefix python@3.11)/bin/python3
-
-if [ -x "$PYTHON_PATH" ]; then
-    $PYTHON_PATH -c "print('Python installation successful!')" || handle_error "Failed to test Python installation."
-else
-    handle_error "Python 3.11 is not installed or not found in the expected path."
-fi
-
-# 15. Launch a new terminal to test GPT-CLI with a refreshed environment
-echo "Testing GPT-CLI in a new terminal session..."
+# 14. Launch a new terminal to test Python installation and GPT-CLI in a new environment
+echo "Testing Python and GPT-CLI in a new terminal session..."
 
 osascript <<EOD
 tell application "Terminal"
-    do script "cd $TARGET_DIR/folders/gpt-cli && source ~/.zshrc && $PYTHON_PATH gpt.py"
+    do script "source ~/.zshrc && /opt/homebrew/opt/python@3.11/bin/python3 -c 'print(\"Python installation successful!\")' && cd $TARGET_DIR/folders/gpt-cli && /opt/homebrew/opt/python@3.11/bin/python3 gpt.py"
 end tell
 EOD
 
