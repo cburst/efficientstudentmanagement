@@ -9,13 +9,15 @@ function handle_error {
 # 1. Install Homebrew if not already installed
 if ! command -v brew &> /dev/null; then
     echo "Homebrew not found. Installing Homebrew..."
+    echo "You may be prompted for your password during the Homebrew installation."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || handle_error "Failed to install Homebrew."
 else
     echo "Homebrew is already installed."
 fi
 
-# 2. Install Python 3.11 using Homebrew
-echo "Installing Python 3.11 via Homebrew..."
+# 2. Install Python 3.11.9 using Homebrew
+echo "Installing Python 3.11.9 via Homebrew..."
+echo "You may be prompted for your password during the Python installation."
 brew install python@3.11 || handle_error "Failed to install Python 3.11."
 
 # 3. Ensure Python 3.11 is the default version
