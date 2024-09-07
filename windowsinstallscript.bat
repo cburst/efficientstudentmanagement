@@ -38,14 +38,14 @@ try {
         Handle-Error 'Failed to detect Windows version or architecture.'
     }
 
-    # 2. Download and Install Python 3.11 based on Architecture
+    # 2. Download and Install Python 3.11.9 based on Architecture
     try {
         if (`$architecture -like '*64*') {
             # Download Python 64-bit version
-            `$pythonInstaller = 'https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe'
+            `$pythonInstaller = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe'
         } elseif (`$architecture -like '*32*') {
             # Download Python 32-bit version
-            `$pythonInstaller = 'https://www.python.org/ftp/python/3.11.0/python-3.11.0.exe'
+            `$pythonInstaller = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9.exe'
         } else {
             Handle-Error 'Unsupported system architecture detected.'
         }
@@ -57,6 +57,9 @@ try {
 
         # Verify installation
         `$pythonPath = (Get-Command python).Source
+        if (-not `$pythonPath) {
+            Handle-Error 'Python installation failed or not found in PATH.'
+        }
         Write-Host 'Python installed at: ' `$pythonPath
     } catch {
         Handle-Error 'Failed to download or install Python.'
@@ -92,7 +95,7 @@ try {
 
     # 6. Create a PowerShell link on the desktop
     try {
-        `$desktopPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('Desktop'), 'Open Target Folder.lnk')
+        `$desktopPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('Desktop'), 'Open Project Folder.lnk')
         `$target = `"$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe`"
         `$workingDir = `$targetDir
         `$wScriptShell = New-Object -ComObject WScript.Shell
@@ -128,7 +131,7 @@ try {
     # 9. Test Python Installation
     try {
         Write-Host 'Testing Python installation...'
-        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList '-c ""print(''Python installation successful!'')""'
+        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList '-c ""print(''Python installation successful!'')"'
         Write-Host 'Python test completed successfully.'
     } catch {
         Handle-Error 'Failed to test Python installation.'
