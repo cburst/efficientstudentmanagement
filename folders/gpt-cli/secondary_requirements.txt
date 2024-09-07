@@ -1,0 +1,5 @@
+# secondary_requirements.txt
+google-generativeai==0.5.4
+pydantic-core==2.0.1
+boto3==1.28.0
+cohere==5.9.1
