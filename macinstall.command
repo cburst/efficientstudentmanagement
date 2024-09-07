@@ -39,7 +39,7 @@ write_to_profiles() {
 
     # Add Python 3.11 path and alias
     echo "export PATH=\"/opt/homebrew/opt/python@3.11/bin:\$PATH\"" >> "$HOME/$profile"
-    echo "alias python3='/opt/homebrew/opt/python@3.11/bin/python3'" >> "$HOME/$profile"
+    echo "alias python3='/opt/homebrew/opt/python@3.11/bin/python3.11'" >> "$HOME/$profile"
     echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/$profile"
 }
 
@@ -73,12 +73,12 @@ rm "$ZIP_FILE"
 # 8. Install Python dependencies from requirements.txt with --no-deps to prevent unnecessary upgrades
 echo "Installing Python dependencies without unnecessary dependency resolution..."
 REQUIREMENTS_FILE="$TARGET_DIR/folders/gpt-cli/requirements.txt"
-pip3 install --no-deps -r "$REQUIREMENTS_FILE" || handle_error "Failed to install Python dependencies."
+pip3.11 install --no-deps -r "$REQUIREMENTS_FILE" || handle_error "Failed to install Python dependencies."
 
 # 9. Ensure correct attrs version (23.2.0) is installed
 echo "Installing the correct attrs version (23.2.0)..."
-pip3 uninstall attrs -y || handle_error "Failed to uninstall conflicting attrs version."
-pip3 install attrs==23.2.0 --no-deps || handle_error "Failed to install attrs==23.2.0."
+pip3.11 uninstall attrs -y || handle_error "Failed to uninstall conflicting attrs version."
+pip3.11 install attrs==23.2.0 --no-deps || handle_error "Failed to install attrs==23.2.0."
 
 # 10. Upgrade OpenSSL and link it to Python
 echo "Upgrading OpenSSL to resolve SSL issues..."
@@ -91,7 +91,7 @@ brew link openssl --force || handle_error "Failed to link OpenSSL."
 
 # 11. Reinstall urllib3 and requests to use the correct OpenSSL version
 echo "Reinstalling urllib3 and requests with proper OpenSSL support..."
-pip3 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
+pip3.11 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
 
 # 12. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
 echo "Creating a Terminal shortcut on the Desktop..."
@@ -126,7 +126,7 @@ echo "Testing Python and GPT-CLI in a new terminal session..."
 
 osascript <<EOD
 tell application "Terminal"
-    do script "source ~/.zshrc && /opt/homebrew/opt/python@3.11/bin/python3 -c 'print(\"Python installation successful!\")' && cd $TARGET_DIR/folders/gpt-cli && /opt/homebrew/opt/python@3.11/bin/python3 gpt.py"
+    do script "source ~/.zshrc && /opt/homebrew/opt/python@3.11/bin/python3.11 -c 'print(\"Python installation successful!\")' && cd $TARGET_DIR/folders/gpt-cli && /opt/homebrew/opt/python@3.11/bin/python3.11 gpt.py"
 end tell
 EOD
 
