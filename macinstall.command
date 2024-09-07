@@ -130,7 +130,21 @@ EOL
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
 
-# 15. Launch a new terminal to test GPT-CLI in a new environment
+# 15. Run secondary requirements installation after profiles are sourced
+echo "Running secondary requirements installation..."
+SECONDARY_REQUIREMENTS_FILE="$TARGET_DIR/folders/gpt-cli/secondary_requirements.txt"
+
+cat <<EOL > "$SECONDARY_REQUIREMENTS_FILE"
+google-generativeai==0.5.4
+pydantic-core==2.0.1
+boto3==1.28.0
+cohere==5.9.1
+EOL
+
+# Install the secondary dependencies
+pip3 install --no-deps -r "$SECONDARY_REQUIREMENTS_FILE" || handle_error "Failed to install secondary dependencies."
+
+# 16. Launch a new terminal to test GPT-CLI in a new environment
 echo "Testing GPT-CLI in a new terminal session..."
 
 osascript <<EOD
