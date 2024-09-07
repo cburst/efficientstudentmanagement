@@ -37,7 +37,7 @@ write_to_profiles() {
         touch "$HOME/$profile"
     fi
 
-    # Add Python 3.11 path and alias
+    # Add Python 3.11 path and alias to the profile
     echo "export PATH=\"/opt/homebrew/opt/python@3.11/bin:\$PATH\"" >> "$HOME/$profile"
     echo "alias python3='/opt/homebrew/opt/python@3.11/bin/python3.11'" >> "$HOME/$profile"
     echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/$profile"
