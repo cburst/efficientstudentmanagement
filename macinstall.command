@@ -57,7 +57,11 @@ write_to_profiles ".zshrc"
 source "$HOME/.bash_profile"
 source "$HOME/.zshrc"
 
-# 6. Download the GitHub repository to the target directory
+# 6. Test Python 3.11 installation before proceeding
+echo "Testing Python 3.11 installation..."
+python3.11 -c "print('Python 3.11 installation successful!')" || handle_error "Failed to test Python 3.11 installation."
+
+# 7. Download the GitHub repository to the target directory
 echo "Downloading the GitHub repository..."
 GITHUB_REPO_URL="https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip"
 TARGET_DIR="$HOME/efficientstudentmanagement-main"
@@ -65,22 +69,22 @@ ZIP_FILE="$HOME/efficientstudentmanagement.zip"
 
 curl -L "$GITHUB_REPO_URL" -o "$ZIP_FILE" || handle_error "Failed to download the GitHub repository."
 
-# 7. Unzip the downloaded file and move it to the target directory
+# 8. Unzip the downloaded file and move it to the target directory
 echo "Extracting the repository..."
 unzip -o "$ZIP_FILE" -d "$HOME" || handle_error "Failed to unzip the repository."
 rm "$ZIP_FILE"
 
-# 8. Install Python dependencies from requirements.txt with --no-deps to prevent unnecessary upgrades
+# 9. Install Python dependencies from requirements.txt with --no-deps to prevent unnecessary upgrades
 echo "Installing Python dependencies without unnecessary dependency resolution..."
 REQUIREMENTS_FILE="$TARGET_DIR/folders/gpt-cli/requirements.txt"
 pip3.11 install --no-deps -r "$REQUIREMENTS_FILE" || handle_error "Failed to install Python dependencies."
 
-# 9. Ensure correct attrs version (23.2.0) is installed
+# 10. Ensure correct attrs version (23.2.0) is installed
 echo "Installing the correct attrs version (23.2.0)..."
 pip3.11 uninstall attrs -y || handle_error "Failed to uninstall conflicting attrs version."
 pip3.11 install attrs==23.2.0 --no-deps || handle_error "Failed to install attrs==23.2.0."
 
-# 10. Upgrade OpenSSL and link it to Python
+# 11. Upgrade OpenSSL and link it to Python
 echo "Upgrading OpenSSL to resolve SSL issues..."
 brew install openssl || handle_error "Failed to install OpenSSL."
 echo "Linking OpenSSL to Python..."
@@ -89,11 +93,11 @@ export LDFLAGS="-L/usr/local/opt/openssl/lib"
 export CPPFLAGS="-I/usr/local/opt/openssl/include"
 brew link openssl --force || handle_error "Failed to link OpenSSL."
 
-# 11. Reinstall urllib3 and requests to use the correct OpenSSL version
+# 12. Reinstall urllib3 and requests to use the correct OpenSSL version
 echo "Reinstalling urllib3 and requests with proper OpenSSL support..."
 pip3.11 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
 
-# 12. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
+# 13. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
 echo "Creating a Terminal shortcut on the Desktop..."
 
 SHORTCUT_FILE="$HOME/Desktop/Open_EfficientStudentManagement.command"
@@ -117,16 +121,16 @@ cd "$TARGET_DIR"
 exec /bin/$DEFAULT_SHELL
 EOL
 
-# 13. Apply chmod +x to make the .command file executable
+# 14. Apply chmod +x to make the .command file executable
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
 
-# 14. Launch a new terminal to test Python installation and GPT-CLI in a new environment
-echo "Testing Python and GPT-CLI in a new terminal session..."
+# 15. Launch a new terminal to test GPT-CLI in a new environment
+echo "Testing GPT-CLI in a new terminal session..."
 
 osascript <<EOD
 tell application "Terminal"
-    do script "source ~/.zshrc && /opt/homebrew/opt/python@3.11/bin/python3.11 -c 'print(\"Python installation successful!\")' && cd $TARGET_DIR/folders/gpt-cli && /opt/homebrew/opt/python@3.11/bin/python3.11 gpt.py"
+    do script "source ~/.zshrc && cd $TARGET_DIR/folders/gpt-cli && /opt/homebrew/opt/python@3.11/bin/python3.11 gpt.py"
 end tell
 EOD
 
