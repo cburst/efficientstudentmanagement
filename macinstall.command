@@ -24,7 +24,11 @@ brew install python@3.11 || handle_error "Failed to install Python 3.11."
 echo "Setting Python 3.11 as the default..."
 brew link --overwrite python@3.11 || handle_error "Failed to link Python 3.11."
 
-# 4. Update the PATH to ensure Python 3.11 is used globally and add aliases for both python3 and pip3
+# 4. Unlink any older Python versions (optional but recommended)
+echo "Unlinking Python 3.9 to avoid conflicts..."
+brew unlink python@3.9 || handle_error "Failed to unlink Python 3.9."
+
+# 5. Update the PATH to ensure Python 3.11 is used globally and add aliases for both python3 and pip3
 echo "Updating PATH to prioritize Python 3.11..."
 
 # Function to update or create profile with aliases and Python path
@@ -44,7 +48,7 @@ write_to_profiles() {
     echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/$profile"
 }
 
-# 5. Ask the user for the API key and set it as a global environment variable
+# 6. Ask the user for the API key and set it as a global environment variable
 read -p "Enter your OPENAI_API_KEY: " API_KEY
 if [ -z "$API_KEY" ]; then
     handle_error "No API key provided."
@@ -58,11 +62,34 @@ write_to_profiles ".zshrc"
 source "$HOME/.bash_profile"
 source "$HOME/.zshrc"
 
-# 6. Test Python 3.11 installation before proceeding
+# 7. Test Python 3.11 installation before proceeding
 echo "Testing Python 3.11 installation..."
-python3.11 -c "print('Python 3.11 installation successful!')" || handle_error "Failed to test Python 3.11 installation."
+python3 -c "print('Python 3.11 installation successful!')" || handle_error "Failed to test Python 3.11 installation."
 
-# 7. Download the GitHub repository to the target directory
+# 8. Install Python dependencies from requirements.txt after sourcing the profiles
+echo "Installing Python dependencies without unnecessary dependency resolution..."
+REQUIREMENTS_FILE="$HOME/efficientstudentmanagement-main/folders/gpt-cli/requirements.txt"
+pip3 install --no-deps -r "$REQUIREMENTS_FILE" || handle_error "Failed to install Python dependencies."
+
+# 9. Ensure correct attrs version (23.2.0) is installed
+echo "Installing the correct attrs version (23.2.0)..."
+pip3 uninstall attrs -y || handle_error "Failed to uninstall conflicting attrs version."
+pip3 install attrs==23.2.0 --no-deps || handle_error "Failed to install attrs==23.2.0."
+
+# 10. Upgrade OpenSSL and link it to Python
+echo "Upgrading OpenSSL to resolve SSL issues..."
+brew install openssl || handle_error "Failed to install OpenSSL."
+echo "Linking OpenSSL to Python..."
+export PATH="/usr/local/opt/openssl/bin:$PATH"
+export LDFLAGS="-L/usr/local/opt/openssl/lib"
+export CPPFLAGS="-I/usr/local/opt/openssl/include"
+brew link openssl --force || handle_error "Failed to link OpenSSL."
+
+# 11. Reinstall urllib3 and requests to use the correct OpenSSL version
+echo "Reinstalling urllib3 and requests with proper OpenSSL support..."
+pip3 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
+
+# 12. Download the GitHub repository to the target directory
 echo "Downloading the GitHub repository..."
 GITHUB_REPO_URL="https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip"
 TARGET_DIR="$HOME/efficientstudentmanagement-main"
@@ -70,12 +97,12 @@ ZIP_FILE="$HOME/efficientstudentmanagement.zip"
 
 curl -L "$GITHUB_REPO_URL" -o "$ZIP_FILE" || handle_error "Failed to download the GitHub repository."
 
-# 8. Unzip the downloaded file and move it to the target directory
+# 13. Unzip the downloaded file and move it to the target directory
 echo "Extracting the repository..."
 unzip -o "$ZIP_FILE" -d "$HOME" || handle_error "Failed to unzip the repository."
 rm "$ZIP_FILE"
 
-# 9. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
+# 14. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
 echo "Creating a Terminal shortcut on the Desktop..."
 
 SHORTCUT_FILE="$HOME/Desktop/Open_EfficientStudentManagement.command"
@@ -99,24 +126,18 @@ cd "$TARGET_DIR"
 exec /bin/$DEFAULT_SHELL
 EOL
 
-# 10. Apply chmod +x to make the .command file executable
+# 15. Apply chmod +x to make the .command file executable
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
 
-# 11. Launch a new terminal to install Python dependencies and run GPT-CLI in a new environment
-echo "Installing Python dependencies and testing GPT-CLI in a new terminal session..."
+# 16. Launch a new terminal to test GPT-CLI in a new environment
+echo "Testing GPT-CLI in a new terminal session..."
 
 osascript <<EOD
 tell application "Terminal"
     do script "
     source ~/.zshrc && \
     cd $TARGET_DIR/folders/gpt-cli && \
-    pip3 install --no-deps -r requirements.txt && \
-    pip3 uninstall attrs -y && \
-    pip3 install attrs==23.2.0 --no-deps && \
-    brew install openssl && \
-    brew link openssl --force && \
-    pip3 install --upgrade urllib3 requests && \
     python3 gpt.py"
 end tell
 EOD
