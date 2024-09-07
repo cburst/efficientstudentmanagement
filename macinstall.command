@@ -59,6 +59,12 @@ fi
 if [ -f "$HOME/.zshrc" ]; then
     echo "export PATH=\"/opt/homebrew/opt/python@3.11/bin:\$PATH\"" >> "$HOME/.zshrc"
     source "$HOME/.zshrc"
+else
+    echo "Creating .zshrc file..."
+    touch "$HOME/.zshrc"
+    echo 'export PATH="/opt/homebrew/opt/python@3.11/bin:$PATH"' >> "$HOME/.zshrc"
+    echo 'export OPENAI_API_KEY="your_openai_api_key"' >> "$HOME/.zshrc"
+    source "$HOME/.zshrc"
 fi
 
 # 5. Download the GitHub repository to the target directory
