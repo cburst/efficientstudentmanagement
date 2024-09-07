@@ -28,7 +28,16 @@ brew install python@3.11 || handle_error "Failed to install Python 3.11."
 
 # 3. Ensure Python 3.11 is the default version
 echo "Setting Python 3.11 as the default..."
-brew unlink python@3.12 || handle_error "Failed to unlink Python 3.12."
+
+# Check if Python 3.12 is installed before attempting to unlink it
+if brew list --versions python@3.12 > /dev/null 2>&1; then
+    echo "Unlinking Python 3.12..."
+    brew unlink python@3.12 || handle_error "Failed to unlink Python 3.12."
+else
+    echo "Python 3.12 is not installed, skipping unlink step."
+fi
+
+# Link Python 3.11
 brew link --overwrite python@3.11 || handle_error "Failed to link Python 3.11."
 
 # 4. Update the PATH to ensure Python 3.11 is used globally
