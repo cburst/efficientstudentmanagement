@@ -24,22 +24,23 @@ brew install python@3.11 || handle_error "Failed to install Python 3.11."
 echo "Setting Python 3.11 as the default..."
 brew link --overwrite python@3.11 || handle_error "Failed to link Python 3.11."
 
-# 4. Update the PATH to ensure Python 3.11 is used globally and add alias to both profiles
+# 4. Update the PATH to ensure Python 3.11 is used globally and add aliases for both python3 and pip3
 echo "Updating PATH to prioritize Python 3.11..."
 
-# Function to update or create profile with alias and Python path
+# Function to update or create profile with aliases and Python path
 write_to_profiles() {
     local profile="$1"
     if [ -f "$HOME/$profile" ]; then
-        echo "Updating $profile with Python path and alias..."
+        echo "Updating $profile with Python path and aliases..."
     else
-        echo "Creating $profile and adding Python path and alias..."
+        echo "Creating $profile and adding Python path and aliases..."
         touch "$HOME/$profile"
     fi
 
-    # Add Python 3.11 path and alias to the profile
+    # Add Python 3.11 path and aliases for python3 and pip3
     echo "export PATH=\"/opt/homebrew/opt/python@3.11/bin:\$PATH\"" >> "$HOME/$profile"
     echo "alias python3='/opt/homebrew/opt/python@3.11/bin/python3.11'" >> "$HOME/$profile"
+    echo "alias pip3='/opt/homebrew/opt/python@3.11/bin/pip3.11'" >> "$HOME/$profile"
     echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/$profile"
 }
 
@@ -110,13 +111,13 @@ tell application "Terminal"
     do script "
     source ~/.zshrc && \
     cd $TARGET_DIR/folders/gpt-cli && \
-    pip3.11 install --no-deps -r requirements.txt && \
-    pip3.11 uninstall attrs -y && \
-    pip3.11 install attrs==23.2.0 --no-deps && \
+    pip3 install --no-deps -r requirements.txt && \
+    pip3 uninstall attrs -y && \
+    pip3 install attrs==23.2.0 --no-deps && \
     brew install openssl && \
     brew link openssl --force && \
-    pip3.11 install --upgrade urllib3 requests && \
-    python3.11 gpt.py"
+    pip3 install --upgrade urllib3 requests && \
+    python3 gpt.py"
 end tell
 EOD
 
