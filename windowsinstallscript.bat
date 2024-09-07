@@ -31,20 +31,27 @@ try {
         `$windowsVersion = (Get-WmiObject -Class Win32_OperatingSystem).Version
         Write-Host 'Detected Windows Version: ' `$windowsVersion
 
-        # Determine if the system is 32-bit or 64-bit
+        # Determine if the system is ARM64, 32-bit, or 64-bit
         `$architecture = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
         Write-Host 'Detected Architecture: ' `$architecture
+
+        `$processorArchitecture = (Get-WmiObject -Class Win32_Processor).Architecture
+        Write-Host 'Detected Processor Architecture: ' `$processorArchitecture
+
     } catch {
         Handle-Error 'Failed to detect Windows version or architecture.'
     }
 
     # 2. Download and Install Python 3.11.9 based on Architecture
     try {
-        if (`$architecture -like '*64*') {
-            # Download Python 64-bit version
+        if (`$architecture -like '*64*' -and `$processorArchitecture -eq 5) {
+            # ARM64 architecture
+            `$pythonInstaller = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-arm64.exe'
+        } elseif (`$architecture -like '*64*') {
+            # x64 architecture
             `$pythonInstaller = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe'
         } elseif (`$architecture -like '*32*') {
-            # Download Python 32-bit version
+            # x86 (32-bit) architecture
             `$pythonInstaller = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9.exe'
         } else {
             Handle-Error 'Unsupported system architecture detected.'
@@ -55,7 +62,7 @@ try {
         Invoke-WebRequest -Uri `$pythonInstaller -OutFile `$pythonInstallerPath
         Start-Process -FilePath `$pythonInstallerPath -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait
 
-        # Verify installation
+        # Verify installation by checking the Python path directly
         `$pythonPath = (Get-Command python).Source
         if (-not `$pythonPath) {
             Handle-Error 'Python installation failed or not found in PATH.'
