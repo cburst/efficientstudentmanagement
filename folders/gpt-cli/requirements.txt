@@ -1,7 +1,7 @@
 aiohttp==3.9.3
 aiosignal==1.3.1
 
-# Allow some flexibility for anthropic to avoid conflicts
+# Allow flexibility for anthropic to avoid conflicts
 anthropic>=0.25.9,<0.26.0
 
 anyio==3.6.2
@@ -39,8 +39,8 @@ six==1.16.0
 sniffio==1.3.0
 tiktoken==0.3.3
 
-# Set tokenizers to a specific version to resolve conflict between anthropic, cohere, and transformers
-tokenizers==0.14.1
+# Allow tokenizers version that satisfies both anthropic and cohere
+tokenizers>=0.15,<0.20
 
 tomli==2.0.1
 tqdm==4.66.2
@@ -52,7 +52,7 @@ yarl==1.8.2
 # Keep Google Generative AI
 google-generativeai==0.5.4
 
-# Allow flexibility with cohere to resolve conflict with tokenizers
+# Allow some flexibility with cohere to resolve conflict with tokenizers
 cohere>=5.5.3,<6.0.0
 
 # gpt-cli requires attrs==23.2.0 and needs to match with tokenizers
