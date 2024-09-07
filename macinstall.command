@@ -24,26 +24,40 @@ brew install python@3.11 || handle_error "Failed to install Python 3.11."
 echo "Setting Python 3.11 as the default..."
 brew link --overwrite python@3.11 || handle_error "Failed to link Python 3.11."
 
-# 4. Update the PATH to ensure Python 3.11 is used globally
+# 4. Update the PATH to ensure Python 3.11 is used globally and add alias to both profiles
 echo "Updating PATH to prioritize Python 3.11..."
-export PATH="/opt/homebrew/opt/python@3.11/bin:$PATH"
 
-# Ensure Python 3.11 is set in .bash_profile and .zshrc if either exists
-if [ -f "$HOME/.bash_profile" ]; then
-    echo "export PATH=\"/opt/homebrew/opt/python@3.11/bin:\$PATH\"" >> "$HOME/.bash_profile"
-    source "$HOME/.bash_profile"
-fi
-if [ -f "$HOME/.zshrc" ]; then
-    echo "export PATH=\"/opt/homebrew/opt/python@3.11/bin:\$PATH\"" >> "$HOME/.zshrc"
-    source "$HOME/.zshrc"
-else
-    echo "Creating .zshrc file..."
-    touch "$HOME/.zshrc"
-    echo 'export PATH="/opt/homebrew/opt/python@3.11/bin:$PATH"' >> "$HOME/.zshrc"
-    source "$HOME/.zshrc"
+# Function to update or create profile with alias and Python path
+write_to_profiles() {
+    local profile="$1"
+    if [ -f "$HOME/$profile" ]; then
+        echo "Updating $profile with Python path and alias..."
+    else
+        echo "Creating $profile and adding Python path and alias..."
+        touch "$HOME/$profile"
+    fi
+
+    # Add Python 3.11 path and alias
+    echo "export PATH=\"/opt/homebrew/opt/python@3.11/bin:\$PATH\"" >> "$HOME/$profile"
+    echo "alias python3='/opt/homebrew/opt/python@3.11/bin/python3'" >> "$HOME/$profile"
+    echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/$profile"
+}
+
+# 5. Ask the user for the API key and set it as a global environment variable
+read -p "Enter your OPENAI_API_KEY: " API_KEY
+if [ -z "$API_KEY" ]; then
+    handle_error "No API key provided."
 fi
 
-# 5. Download the GitHub repository to the target directory
+# Write to both .bash_profile and .zshrc
+write_to_profiles ".bash_profile"
+write_to_profiles ".zshrc"
+
+# Source both profiles to apply the changes
+source "$HOME/.bash_profile"
+source "$HOME/.zshrc"
+
+# 6. Download the GitHub repository to the target directory
 echo "Downloading the GitHub repository..."
 GITHUB_REPO_URL="https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip"
 TARGET_DIR="$HOME/efficientstudentmanagement-main"
@@ -51,22 +65,22 @@ ZIP_FILE="$HOME/efficientstudentmanagement.zip"
 
 curl -L "$GITHUB_REPO_URL" -o "$ZIP_FILE" || handle_error "Failed to download the GitHub repository."
 
-# 6. Unzip the downloaded file and move it to the target directory
+# 7. Unzip the downloaded file and move it to the target directory
 echo "Extracting the repository..."
 unzip -o "$ZIP_FILE" -d "$HOME" || handle_error "Failed to unzip the repository."
 rm "$ZIP_FILE"
 
-# 7. Install Python dependencies from requirements.txt with --no-deps to prevent unnecessary upgrades
+# 8. Install Python dependencies from requirements.txt with --no-deps to prevent unnecessary upgrades
 echo "Installing Python dependencies without unnecessary dependency resolution..."
 REQUIREMENTS_FILE="$TARGET_DIR/folders/gpt-cli/requirements.txt"
 pip3 install --no-deps -r "$REQUIREMENTS_FILE" || handle_error "Failed to install Python dependencies."
 
-# 8. Ensure correct attrs version (23.2.0) is installed
+# 9. Ensure correct attrs version (23.2.0) is installed
 echo "Installing the correct attrs version (23.2.0)..."
 pip3 uninstall attrs -y || handle_error "Failed to uninstall conflicting attrs version."
 pip3 install attrs==23.2.0 --no-deps || handle_error "Failed to install attrs==23.2.0."
 
-# 9. Upgrade OpenSSL and link it to Python
+# 10. Upgrade OpenSSL and link it to Python
 echo "Upgrading OpenSSL to resolve SSL issues..."
 brew install openssl || handle_error "Failed to install OpenSSL."
 echo "Linking OpenSSL to Python..."
@@ -75,11 +89,11 @@ export LDFLAGS="-L/usr/local/opt/openssl/lib"
 export CPPFLAGS="-I/usr/local/opt/openssl/include"
 brew link openssl --force || handle_error "Failed to link OpenSSL."
 
-# 10. Reinstall urllib3 and requests to use the correct OpenSSL version
+# 11. Reinstall urllib3 and requests to use the correct OpenSSL version
 echo "Reinstalling urllib3 and requests with proper OpenSSL support..."
 pip3 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
 
-# 11. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
+# 12. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
 echo "Creating a Terminal shortcut on the Desktop..."
 
 SHORTCUT_FILE="$HOME/Desktop/Open_EfficientStudentManagement.command"
@@ -103,23 +117,9 @@ cd "$TARGET_DIR"
 exec /bin/$DEFAULT_SHELL
 EOL
 
-# 12. Apply chmod +x to make the .command file executable
+# 13. Apply chmod +x to make the .command file executable
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
-
-# 13. Ask the user for the API key and set it as a global environment variable
-read -p "Enter your OPENAI_API_KEY: " API_KEY
-if [ -z "$API_KEY" ]; then
-    handle_error "No API key provided."
-fi
-
-echo "Setting the OPENAI_API_KEY environment variable..."
-if [ -f "$HOME/.bash_profile" ]; then
-    echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/.bash_profile"
-fi
-if [ -f "$HOME/.zshrc" ]; then
-    echo "export OPENAI_API_KEY=\"$API_KEY\"" >> "$HOME/.zshrc"
-fi
 
 # 14. Launch a new terminal to test Python installation and GPT-CLI in a new environment
 echo "Testing Python and GPT-CLI in a new terminal session..."
