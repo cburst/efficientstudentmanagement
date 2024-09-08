@@ -97,21 +97,40 @@ source "$HOME/.zshrc"
 echo "Testing Python 3.11 installation..."
 python3 -c "print('Python 3.11 installation successful!')" || handle_error "Failed to test Python 3.11 installation."
 
-# 9. Install Python dependencies from requirements.txt after sourcing the profiles
-echo "Installing Python dependencies without unnecessary dependency resolution..."
-REQUIREMENTS_FILE="$HOME/efficientstudentmanagement-main/folders/gpt-cli/requirements.txt"
+# 9. Download the GitHub repository to the target directory
+echo "Downloading the GitHub repository..."
+GITHUB_REPO_URL="https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip"
+TARGET_DIR="$HOME/efficientstudentmanagement-main"
+ZIP_FILE="$HOME/efficientstudentmanagement.zip"
+
+curl -L "$GITHUB_REPO_URL" -o "$ZIP_FILE" || handle_error "Failed to download the GitHub repository."
+
+# 10. Unzip the downloaded file and move it to the target directory
+echo "Extracting the repository..."
+unzip -o "$ZIP_FILE" -d "$HOME" || handle_error "Failed to unzip the repository."
+rm "$ZIP_FILE"
+
+# Check if the target directory and requirements file exist before proceeding
+if [ ! -f "$TARGET_DIR/folders/gpt-cli/requirements.txt" ]; then
+    handle_error "Failed to find the requirements.txt file. Ensure the GitHub repo was downloaded and extracted correctly."
+fi
+
+# 11. Upgrade pip and install Python dependencies from requirements.txt after sourcing the profiles
+echo "Upgrading pip and installing Python dependencies..."
+pip3 install --upgrade pip || handle_error "Failed to upgrade pip."
+REQUIREMENTS_FILE="$TARGET_DIR/folders/gpt-cli/requirements.txt"
 pip3 install --no-deps -r "$REQUIREMENTS_FILE" || handle_error "Failed to install Python dependencies."
 
-# 10. Ensure correct attrs version (23.2.0) is installed
+# 12. Ensure correct attrs version (23.2.0) is installed
 echo "Installing the correct attrs version (23.2.0)..."
 pip3 uninstall attrs -y || handle_error "Failed to uninstall conflicting attrs version."
 pip3 install attrs==23.2.0 --no-deps || handle_error "Failed to install attrs==23.2.0."
 
-# 11. Reinstall pydantic and pydantic_core with correct versions
+# 13. Reinstall pydantic and pydantic_core with correct versions
 echo "Reinstalling pydantic and pydantic_core with correct versions..."
 pip3 install --force-reinstall pydantic==2.0.3 pydantic-core==2.3.0 || handle_error "Failed to reinstall pydantic or pydantic_core."
 
-# 12. Upgrade OpenSSL and link it to Python
+# 14. Upgrade OpenSSL and link it to Python
 echo "Upgrading OpenSSL to resolve SSL issues..."
 brew install openssl || handle_error "Failed to install OpenSSL."
 echo "Linking OpenSSL to Python..."
@@ -120,22 +139,9 @@ export LDFLAGS="-L/usr/local/opt/openssl/lib"
 export CPPFLAGS="-I/usr/local/opt/openssl/include"
 brew link openssl --force || handle_error "Failed to link OpenSSL."
 
-# 13. Reinstall urllib3 and requests to use the correct OpenSSL version
+# 15. Reinstall urllib3 and requests to use the correct OpenSSL version
 echo "Reinstalling urllib3 and requests with proper OpenSSL support..."
 pip3 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
-
-# 14. Download the GitHub repository to the target directory
-echo "Downloading the GitHub repository..."
-GITHUB_REPO_URL="https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip"
-TARGET_DIR="$HOME/efficientstudentmanagement-main"
-ZIP_FILE="$HOME/efficientstudentmanagement.zip"
-
-curl -L "$GITHUB_REPO_URL" -o "$ZIP_FILE" || handle_error "Failed to download the GitHub repository."
-
-# 15. Unzip the downloaded file and move it to the target directory
-echo "Extracting the repository..."
-unzip -o "$ZIP_FILE" -d "$HOME" || handle_error "Failed to unzip the repository."
-rm "$ZIP_FILE"
 
 # 16. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
 echo "Creating a Terminal shortcut on the Desktop..."
@@ -190,5 +196,4 @@ tell application "Terminal"
 end tell
 EOD
 
-echo "Please restart your terminal to fully apply the changes in this session, or you can start a new session with the desktop shortcut."
-echo "Setup complete! You can now double-click the .command file on your Desktop to open
+echo
