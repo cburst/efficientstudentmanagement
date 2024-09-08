@@ -103,7 +103,9 @@ GITHUB_REPO_URL="https://github.com/cburst/efficientstudentmanagement/archive/re
 TARGET_DIR="$HOME/efficientstudentmanagement-main"
 ZIP_FILE="$HOME/efficientstudentmanagement.zip"
 
-curl -L "$GITHUB_REPO_URL" -o "$ZIP_FILE" || handle_error "Failed to download the GitHub repository."
+# Remove any existing zip file and force a fresh download without caching
+rm -f "$ZIP_FILE" # Ensure old ZIP is removed
+curl -H "Cache-Control: no-cache" -L "$GITHUB_REPO_URL" -o "$ZIP_FILE" || handle_error "Failed to download the GitHub repository."
 
 # 10. Unzip the downloaded file and move it to the target directory
 echo "Extracting the repository..."
