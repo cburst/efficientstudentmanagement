@@ -74,7 +74,17 @@ try {
     # 5. Run terminal command to install dependencies from the correct requirements file
     try {
         $requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
-        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList "-m pip install -r $requirementsFile"
+        $secondaryRequirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\secondary_requirements.txt'
+
+        Write-Host "Installing Python dependencies from requirements.txt and secondary_requirements.txt..."
+
+        # Force reinstall to avoid version mismatches
+        $pipInstallOutput1 = & python -m pip install --force-reinstall --no-cache-dir -r $requirementsFile 2>&1
+        Write-Host $pipInstallOutput1
+
+        $pipInstallOutput2 = & python -m pip install --force-reinstall --no-cache-dir -r $secondaryRequirementsFile 2>&1
+        Write-Host $pipInstallOutput2
+
         Write-Host "Dependencies installed successfully."
     } catch {
         Handle-Error "Failed to install Python dependencies."
@@ -131,9 +141,13 @@ try {
                 $requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
                 $secondaryRequirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\secondary_requirements.txt'
 
-                # Run both requirements files
-                Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList "-m pip install -r $requirementsFile"
-                Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList "-m pip install -r $secondaryRequirementsFile"
+                # Run both requirements files again with force reinstall and logging output
+                $pipInstallOutput3 = & python -m pip install --force-reinstall --no-cache-dir -r $requirementsFile 2>&1
+                Write-Host $pipInstallOutput3
+
+                $pipInstallOutput4 = & python -m pip install --force-reinstall --no-cache-dir -r $secondaryRequirementsFile 2>&1
+                Write-Host $pipInstallOutput4
+
                 Write-Host "Both requirements files installed successfully."
             } catch {
                 Handle-Error "Failed to run the requirements files again."
