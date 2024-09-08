@@ -116,28 +116,14 @@ try {
         Handle-Error "Failed to unzip or copy the content to the target location."
     }
 
-    # 5. Install Dependencies (both from requirements and secondary requirements)
+    # 5. Install Dependencies using normal pip install
     try {
         $requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
         $secondaryRequirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\secondary_requirements.txt'
 
         Write-Host "Installing Python dependencies from requirements.txt and secondary_requirements.txt..."
-
-        # Install each package in the requirements file individually
-        Get-Content $requirementsFile | ForEach-Object {
-            if ($_ -and $_ -notmatch "^#") {
-                $packageDetails = $_.Split("==")
-                Install-PipPackage $packageDetails[0] $packageDetails[1]
-            }
-        }
-
-        # Install each package in the secondary requirements file individually
-        Get-Content $secondaryRequirementsFile | ForEach-Object {
-            if ($_ -and $_ -notmatch "^#") {
-                $packageDetails = $_.Split("==")
-                Install-PipPackage $packageDetails[0] $packageDetails[1]
-            }
-        }
+        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList "-m pip install -r $requirementsFile"
+        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList "-m pip install -r $secondaryRequirementsFile"
 
         Write-Host "Dependencies installed successfully."
     } catch {
@@ -188,13 +174,9 @@ try {
         if ($pythonTest -match "Python installation successful!") {
             Write-Host "Python test completed successfully."
 
-            # 10. Re-run requirements and secondary requirements individually
+            # 10. Re-run individual pip installs for requirements if needed
             try {
-                Write-Host "Re-running individual pip installs for requirements.txt and secondary_requirements.txt..."
-                $requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
-                $secondaryRequirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\secondary_requirements.txt'
-
-                # Install each package individually again in case any were missed
+                Write-Host "Re-running individual pip installs for missed requirements..."
                 Get-Content $requirementsFile | ForEach-Object {
                     if ($_ -and $_ -notmatch "^#") {
                         $packageDetails = $_.Split("==")
