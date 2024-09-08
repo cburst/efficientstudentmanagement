@@ -26,9 +26,9 @@ if ! command -v brew &> /dev/null; then
         if [ -f ~/.bash_profile ]; then
             source ~/.bash_profile
         fi
-        source ~/.zshrc && cd ~ && ./macinstall.command" -- Replace 'macinstall.command' with your script's filename
+        source ~/.zshrc && cd ~ && ./macinstall.command"  -- Replace 'macinstall.command' with your script's filename
         delay 1
-        close (every window whose name contains "bash")
+        close (every window whose name contains 'bash')
     end tell
 EOD
     
@@ -71,6 +71,19 @@ write_to_profiles() {
 write_to_profiles ".bash_profile"
 write_to_profiles ".zshrc"
 
+# Check if .zshrc exists, and create it if it doesn't
+if [ ! -f "$HOME/.zshrc" ]; then
+    echo "Creating .zshrc..."
+    touch "$HOME/.zshrc"
+fi
+
+# Source both profiles to apply the changes
+echo "Sourcing profiles to apply changes..."
+if [ -f "$HOME/.bash_profile" ]; then
+    source "$HOME/.bash_profile"
+fi
+source "$HOME/.zshrc" || handle_error "Failed to source .zshrc"
+
 # 7. Ask the user for the API key and set it as a global environment variable
 read -p "Enter your OPENAI_API_KEY: " API_KEY
 if [ -z "$API_KEY" ]; then
@@ -85,13 +98,6 @@ add_api_key_to_profiles() {
 
 add_api_key_to_profiles ".bash_profile"
 add_api_key_to_profiles ".zshrc"
-
-# Source both profiles to apply the changes
-echo "Sourcing profiles to apply changes..."
-if [ -f "$HOME/.bash_profile" ]; then
-    source "$HOME/.bash_profile"
-fi
-source "$HOME/.zshrc"
 
 # 8. Test Python 3.11 installation before proceeding
 echo "Testing Python 3.11 installation..."
@@ -145,12 +151,7 @@ brew link openssl --force || handle_error "Failed to link OpenSSL."
 echo "Reinstalling urllib3 and requests with proper OpenSSL support..."
 pip3 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
 
-# 16. Copy gpt.yml to the correct location
-echo "Copying gpt.yml to ~/.config/gpt-cli/..."
-mkdir -p "$HOME/.config/gpt-cli" || handle_error "Failed to create ~/.config/gpt-cli directory."
-cp "$TARGET_DIR/folders/gpt-cli/gpt.yml" "$HOME/.config/gpt-cli/gpt.yml" || handle_error "Failed to copy gpt.yml to ~/.config/gpt-cli/."
-
-# 17. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
+# 16. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
 echo "Creating a Terminal shortcut on the Desktop..."
 
 SHORTCUT_FILE="$HOME/Desktop/Open_EfficientStudentManagement.command"
@@ -174,11 +175,11 @@ cd "$TARGET_DIR"
 exec /bin/$DEFAULT_SHELL
 EOL
 
-# 18. Apply chmod +x to make the .command file executable
+# 17. Apply chmod +x to make the .command file executable
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
 
-# 19. Launch a new terminal to run secondary requirements and then test GPT-CLI in discrete steps
+# 18. Launch a new terminal to run secondary requirements and then test GPT-CLI in discrete steps
 echo "Testing GPT-CLI in a new terminal session, running each command as a separate step..."
 
 osascript <<EOD
@@ -192,19 +193,16 @@ tell application "Terminal"
     delay 2
     
     do script "
-    pip3 install --no-deps -r requirements.txt" in front window -- Reinstall main requirements
-    delay 2
-
-    do script "
     pip3 install --no-deps -r secondary_requirements.txt" in front window -- Install secondary requirements
     delay 2
     
     do script "
-    cp gpt.yml ~/.config/gpt-cli/gpt.yml" in front window -- Copy the gpt.yml file to the correct location
+    cp gpt.yml ~/.config/gpt-cli/gpt.yml" in front window -- Copy the gpt.yml to the appropriate location
     delay 2
-    
+
     do script "
     python3 gpt.py" in front window -- Finally, run the GPT-CLI test
 end tell
 EOD
+
 echo "Setup complete! Please check the new terminal for GPT-CLI test results."
