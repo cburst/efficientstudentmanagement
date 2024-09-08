@@ -110,9 +110,9 @@ echo "Extracting the repository..."
 unzip -o "$ZIP_FILE" -d "$HOME" || handle_error "Failed to unzip the repository."
 rm "$ZIP_FILE"
 
-# Check if the target directory and requirements file exist before proceeding
+# Verify the extraction and check for the requirements.txt file
 if [ ! -f "$TARGET_DIR/folders/gpt-cli/requirements.txt" ]; then
-    handle_error "Failed to find the requirements.txt file. Ensure the GitHub repo was downloaded and extracted correctly."
+    handle_error "Failed to find the requirements.txt file after extraction. Please check if the repository was downloaded and unzipped correctly."
 fi
 
 # 11. Upgrade pip and install Python dependencies from requirements.txt after sourcing the profiles
