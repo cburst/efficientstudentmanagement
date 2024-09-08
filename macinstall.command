@@ -123,6 +123,15 @@ pip3 install --upgrade pip || handle_error "Failed to upgrade pip."
 REQUIREMENTS_FILE="$TARGET_DIR/folders/gpt-cli/requirements.txt"
 pip3 install --no-deps -r "$REQUIREMENTS_FILE" || handle_error "Failed to install Python dependencies."
 
+# 12. Ensure correct attrs version (23.2.0) is installed
+echo "Installing the correct attrs version (23.2.0)..."
+pip3 uninstall attrs -y || handle_error "Failed to uninstall conflicting attrs version."
+pip3 install attrs==23.2.0 --no-deps || handle_error "Failed to install attrs==23.2.0."
+
+# 13. Reinstall pydantic and pydantic_core with correct versions
+echo "Reinstalling pydantic and pydantic_core with correct versions..."
+pip3 install --force-reinstall pydantic==2.0.3 pydantic-core==2.3.0 || handle_error "Failed to reinstall pydantic or pydantic_core."
+
 # 14. Upgrade OpenSSL and link it to Python
 echo "Upgrading OpenSSL to resolve SSL issues..."
 brew install openssl || handle_error "Failed to install OpenSSL."
