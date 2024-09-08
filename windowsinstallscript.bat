@@ -72,7 +72,7 @@ try {
         Handle-Error 'Failed to download or install Python.'
     }
 
-    # 3. Download Zip from GitHub
+    # 3. Download the GitHub repository to the target directory
     try {
         `$githubRepoZip = 'https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip'
         `$zipPath = `"$env:TEMP\efficientstudentmanagement.zip`"
@@ -82,7 +82,7 @@ try {
         Handle-Error 'Failed to download the GitHub repository.'
     }
 
-    # 4. Unzip the downloaded file and copy content to target location
+    # 4. Unzip the downloaded file and copy content to the target location
     try {
         `$targetDir = 'C:\efficientstudentmanagement-main'
         Expand-Archive -Path `$zipPath -DestinationPath `$targetDir -Force
@@ -91,31 +91,7 @@ try {
         Handle-Error 'Failed to unzip or copy the content to the target location.'
     }
 
-    # 5. Run terminal command to install dependencies from the correct requirements file
-    try {
-        `$requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
-        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList '-m pip install -r `$requirementsFile'
-        Write-Host 'Dependencies installed successfully.'
-    } catch {
-        Handle-Error 'Failed to install Python dependencies.'
-    }
-
-    # 6. Create a PowerShell link on the desktop
-    try {
-        `$desktopPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('Desktop'), 'Open Project Folder.lnk')
-        `$target = `"$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe`"
-        `$workingDir = `$targetDir
-        `$wScriptShell = New-Object -ComObject WScript.Shell
-        `$shortcut = `$wScriptShell.CreateShortcut(`$desktopPath)
-        `$shortcut.TargetPath = `$target
-        `$shortcut.WorkingDirectory = `$workingDir
-        `$shortcut.Save()
-        Write-Host 'Shortcut created on the desktop.'
-    } catch {
-        Handle-Error 'Failed to create a desktop shortcut.'
-    }
-
-    # 7. Ask user for API Key
+    # 5. Ask user for API Key
     try {
         `$apiKey = Read-Host -Prompt 'Enter your OPENAI_API_KEY'
         if ([string]::IsNullOrEmpty(`$apiKey)) {
@@ -127,7 +103,7 @@ try {
         Handle-Error 'Failed to read API key from user.'
     }
 
-    # 8. Set API key as a global, permanent environment variable
+    # 6. Set API key as a global, permanent environment variable
     try {
         [System.Environment]::SetEnvironmentVariable('OPENAI_API_KEY', `$apiKey, [System.EnvironmentVariableTarget]::Machine)
         Write-Host 'OPENAI_API_KEY set as a global environment variable.'
@@ -135,7 +111,37 @@ try {
         Handle-Error 'Failed to set OPENAI_API_KEY as an environment variable.'
     }
 
-    # 9. Test Python Installation
+    # 7. Install Python dependencies
+    try {
+        `$requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
+        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList '-m pip install --no-deps -r `$requirementsFile'
+        Write-Host 'Python dependencies installed successfully.'
+    } catch {
+        Handle-Error 'Failed to install Python dependencies.'
+    }
+
+    # 8. Install secondary dependencies
+    try {
+        `$secondaryRequirements = 'C:\efficientstudentmanagement-main\folders\gpt-cli\secondary_requirements.txt'
+        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList '-m pip install --no-deps -r `$secondaryRequirements'
+        Write-Host 'Secondary Python dependencies installed successfully.'
+    } catch {
+        Handle-Error 'Failed to install secondary Python dependencies.'
+    }
+
+    # 9. Copy gpt.yml to ~/.config/gpt-cli/gpt.yml
+    try {
+        `$configDir = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('UserProfile'), '.config\gpt-cli')
+        if (-not (Test-Path `$configDir)) {
+            New-Item -Path `$configDir -ItemType Directory
+        }
+        Copy-Item 'C:\efficientstudentmanagement-main\folders\gpt-cli\gpt.yml' -Destination `$configDir -Force
+        Write-Host 'gpt.yml copied to configuration folder.'
+    } catch {
+        Handle-Error 'Failed to copy gpt.yml to the configuration folder.'
+    }
+
+    # 10. Test Python Installation
     try {
         Write-Host 'Testing Python installation...'
         Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList '-c ""print(''Python installation successful!'')"'
@@ -144,7 +150,7 @@ try {
         Handle-Error 'Failed to test Python installation.'
     }
 
-    # 10. Test GPT-CLI Command
+    # 11. Test GPT-CLI Command
     try {
         Write-Host 'Testing GPT-CLI...'
         Set-Location 'C:\efficientstudentmanagement-main\folders\gpt-cli'
