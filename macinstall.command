@@ -12,14 +12,10 @@ if ! command -v brew &> /dev/null; then
     echo "You may be prompted for your password during the Homebrew installation."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || handle_error "Failed to install Homebrew."
 
-    # 2. Source profiles after Homebrew installation
-    echo "Sourcing profiles to load Homebrew..."
-    if [ -f "$HOME/.bash_profile" ]; then
-        source "$HOME/.bash_profile"
-    fi
-    if [ -f "$HOME/.zshrc" ]; then
-        source "$HOME/.zshrc"
-    fi
+    # 2. Add Homebrew to the PATH
+    echo "Adding Homebrew to your PATH..."
+    (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> "$HOME/.zprofile"
+    eval "$(/opt/homebrew/bin/brew shellenv)" || handle_error "Failed to add Homebrew to the PATH."
 
     # 3. Reopen the terminal to refresh the environment
     echo "Closing the current terminal and reopening a new one..."
