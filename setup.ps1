@@ -62,10 +62,17 @@ try {
         Handle-Error "Failed to download the GitHub repository."
     }
 
-    # 4. Unzip the downloaded file and copy content to target location
+    # 4. Unzip the downloaded file and fix the double-folder issue
     try {
         $targetDir = 'C:\efficientstudentmanagement-main'
-        Expand-Archive -Path $zipPath -DestinationPath $targetDir -Force
+        # Remove any existing folder
+        if (Test-Path $targetDir) { Remove-Item -Recurse -Force $targetDir }
+
+        # Unzip the repository
+        Expand-Archive -Path $zipPath -DestinationPath 'C:\' -Force
+        Move-Item -Path 'C:\efficientstudentmanagement-main\efficientstudentmanagement-main\*' -Destination $targetDir -Force
+        Remove-Item -Recurse -Force 'C:\efficientstudentmanagement-main\efficientstudentmanagement-main'
+
         Write-Host "Files extracted to $targetDir"
     } catch {
         Handle-Error "Failed to unzip or copy the content to the target location."
