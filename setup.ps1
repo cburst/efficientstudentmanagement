@@ -5,6 +5,26 @@ function Handle-Error {
     exit 1
 }
 
+# Function to install individual pip packages
+function Install-PipPackage {
+    param(
+        [string]$package
+    )
+    try {
+        Write-Host "Installing $package..."
+        $pipInstallOutput = & python -m pip install --force-reinstall --no-cache-dir $package 2>&1
+        Write-Host $pipInstallOutput
+
+        if ($pipInstallOutput -match "Successfully installed") {
+            Write-Host "$package installed successfully."
+        } else {
+            Write-Host "$package installation failed. See logs above."
+        }
+    } catch {
+        Handle-Error "Failed to install $package."
+    }
+}
+
 try {
     # 1. Detect Windows Version and Architecture
     try {
@@ -78,12 +98,15 @@ try {
 
         Write-Host "Installing Python dependencies from requirements.txt and secondary_requirements.txt..."
 
-        # Force reinstall to avoid version mismatches
-        $pipInstallOutput1 = & python -m pip install --force-reinstall --no-cache-dir -r $requirementsFile 2>&1
-        Write-Host $pipInstallOutput1
+        # Install each package in the requirements file individually
+        Get-Content $requirementsFile | ForEach-Object {
+            if ($_ -and $_ -notmatch "^#") { Install-PipPackage $_ }
+        }
 
-        $pipInstallOutput2 = & python -m pip install --force-reinstall --no-cache-dir -r $secondaryRequirementsFile 2>&1
-        Write-Host $pipInstallOutput2
+        # Install each package in the secondary requirements file individually
+        Get-Content $secondaryRequirementsFile | ForEach-Object {
+            if ($_ -and $_ -notmatch "^#") { Install-PipPackage $_ }
+        }
 
         Write-Host "Dependencies installed successfully."
     } catch {
@@ -135,22 +158,24 @@ try {
         if ($pythonTest -match "Python installation successful!") {
             Write-Host "Python test completed successfully."
 
-            # 10. Re-run requirements and secondary requirements
+            # 10. Re-run requirements and secondary requirements individually
             try {
-                Write-Host "Re-running requirements.txt and secondary_requirements.txt..."
+                Write-Host "Re-running individual pip installs for requirements.txt and secondary_requirements.txt..."
                 $requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
                 $secondaryRequirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\secondary_requirements.txt'
 
-                # Run both requirements files again with force reinstall and logging output
-                $pipInstallOutput3 = & python -m pip install --force-reinstall --no-cache-dir -r $requirementsFile 2>&1
-                Write-Host $pipInstallOutput3
+                # Install each package individually again in case any were missed
+                Get-Content $requirementsFile | ForEach-Object {
+                    if ($_ -and $_ -notmatch "^#") { Install-PipPackage $_ }
+                }
 
-                $pipInstallOutput4 = & python -m pip install --force-reinstall --no-cache-dir -r $secondaryRequirementsFile 2>&1
-                Write-Host $pipInstallOutput4
+                Get-Content $secondaryRequirementsFile | ForEach-Object {
+                    if ($_ -and $_ -notmatch "^#") { Install-PipPackage $_ }
+                }
 
-                Write-Host "Both requirements files installed successfully."
+                Write-Host "All individual pip installs completed successfully."
             } catch {
-                Handle-Error "Failed to run the requirements files again."
+                Handle-Error "Failed to re-run individual pip installs."
             }
 
         } else {
