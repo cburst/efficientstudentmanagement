@@ -41,3 +41,4 @@ googleapis-common-protos==1.62.0
 protobuf==4.24.4
 cachetools==5.3.2
 proto-plus==1.23.0
+httplib2==0.22.0
