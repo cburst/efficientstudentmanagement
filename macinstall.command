@@ -33,8 +33,6 @@ else
     echo "Homebrew is already installed."
 fi
 
-# The script resumes from here when reopened
-
 # 4. Install Python 3.11.9 using Homebrew
 echo "Installing Python 3.11.9 via Homebrew..."
 echo "You may be prompted for your password during the Python installation."
@@ -62,6 +60,10 @@ write_to_profiles() {
     echo "alias python3='/opt/homebrew/opt/python@3.11/bin/python3.11'" >> "$HOME/$profile"
     echo "alias pip3='/opt/homebrew/opt/python@3.11/bin/pip3.11'" >> "$HOME/$profile"
 }
+
+# Add Python aliases and path to .bash_profile and .zshrc
+write_to_profiles ".bash_profile"
+write_to_profiles ".zshrc"
 
 # 7. Ask the user for the API key and set it as a global environment variable
 read -p "Enter your OPENAI_API_KEY: " API_KEY
