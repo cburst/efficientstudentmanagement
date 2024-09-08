@@ -1,7 +1,7 @@
 google-generativeai>=0.5.4
 google-ai-generativelanguage==0.6.4
 google-api-core>=2.19.2
-google-api-python-client
+google-api-python-client>=2.144.0
 google-auth>=2.34.0
 protobuf
 googleapis-common-protos
@@ -22,6 +22,11 @@ pyasn1
 pyasn1-modules
 cachetools>=2.0.0,<6.0  # Added for google-auth
 rsa>=3.1.4,<5  # Added for google-auth
+
+# Dependencies for google-api-python-client
+httplib2
+google-auth-httplib2>=0.2.0,<1.0.0  # Added for google-api-python-client
+uritemplate>=3.0.1,<5  # Added for google-api-python-client
 
 # Additional dependencies
 anyio>=3.6.2
