@@ -22,9 +22,13 @@ if ! command -v brew &> /dev/null; then
     
     osascript <<EOD
     tell application "Terminal"
-        do script "if [ -f ~/.bash_profile ]; then
-            source ~/.bash_profile
+        do script "if [ ! -f ~/.bash_profile ]; then
+            touch ~/.bash_profile
         fi
+        if [ ! -f ~/.zshrc ]; then
+            touch ~/.zshrc
+        fi
+        source ~/.bash_profile
         source ~/.zshrc && cd ~ && ~/Downloads/macinstall.command"
         delay 1
         close (every window whose name contains "bash")
@@ -35,8 +39,6 @@ EOD
 else
     echo "Homebrew is already installed."
 fi
-
-# Continue with the rest of the script...
 
 # The script resumes from here when reopened
 
