@@ -145,7 +145,12 @@ brew link openssl --force || handle_error "Failed to link OpenSSL."
 echo "Reinstalling urllib3 and requests with proper OpenSSL support..."
 pip3 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
 
-# 16. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
+# 16. Copy gpt.yml to the correct location
+echo "Copying gpt.yml to ~/.config/gpt-cli/..."
+mkdir -p "$HOME/.config/gpt-cli" || handle_error "Failed to create ~/.config/gpt-cli directory."
+cp "$TARGET_DIR/folders/gpt-cli/gpt.yml" "$HOME/.config/gpt-cli/gpt.yml" || handle_error "Failed to copy gpt.yml to ~/.config/gpt-cli/."
+
+# 17. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
 echo "Creating a Terminal shortcut on the Desktop..."
 
 SHORTCUT_FILE="$HOME/Desktop/Open_EfficientStudentManagement.command"
@@ -169,11 +174,11 @@ cd "$TARGET_DIR"
 exec /bin/$DEFAULT_SHELL
 EOL
 
-# 17. Apply chmod +x to make the .command file executable
+# 18. Apply chmod +x to make the .command file executable
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
 
-# 18. Launch a new terminal to run secondary requirements and then test GPT-CLI in discrete steps
+# 19. Launch a new terminal to run secondary requirements and then test GPT-CLI in discrete steps
 echo "Testing GPT-CLI in a new terminal session, running each command as a separate step..."
 
 osascript <<EOD
