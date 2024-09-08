@@ -192,12 +192,19 @@ tell application "Terminal"
     delay 2
     
     do script "
+    pip3 install --no-deps -r requirements.txt" in front window -- Reinstall main requirements
+    delay 2
+
+    do script "
     pip3 install --no-deps -r secondary_requirements.txt" in front window -- Install secondary requirements
+    delay 2
+    
+    do script "
+    cp gpt.yml ~/.config/gpt-cli/gpt.yml" in front window -- Copy the gpt.yml file to the correct location
     delay 2
     
     do script "
     python3 gpt.py" in front window -- Finally, run the GPT-CLI test
 end tell
 EOD
-
 echo "Setup complete! Please check the new terminal for GPT-CLI test results."
