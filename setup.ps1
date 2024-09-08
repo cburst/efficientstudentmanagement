@@ -24,15 +24,15 @@ try {
 
     # 2. Download and Install Python 3.11.9 based on Architecture
     try {
-        if ($architecture -like "*64*" -and $processorArchitecture -eq 5) {
+        if ($architecture -like '*64*' -and $processorArchitecture -eq 5) {
             # ARM64 architecture
-            $pythonInstaller = "https://www.python.org/ftp/python/3.11.9/python-3.11.9-arm64.exe"
-        } elseif ($architecture -like "*64*") {
+            $pythonInstaller = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-arm64.exe'
+        } elseif ($architecture -like '*64*') {
             # x64 architecture
-            $pythonInstaller = "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe"
-        } elseif ($architecture -like "*32*") {
+            $pythonInstaller = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe'
+        } elseif ($architecture -like '*32*') {
             # x86 (32-bit) architecture
-            $pythonInstaller = "https://www.python.org/ftp/python/3.11.9/python-3.11.9.exe"
+            $pythonInstaller = 'https://www.python.org/ftp/python/3.11.9/python-3.11.9.exe'
         } else {
             Handle-Error "Unsupported system architecture detected."
         }
@@ -40,10 +40,7 @@ try {
         # Proceed with downloading the appropriate installer
         $pythonInstallerPath = "$env:TEMP\python-installer.exe"
         Invoke-WebRequest -Uri $pythonInstaller -OutFile $pythonInstallerPath
-        Start-Process -FilePath $pythonInstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
-
-        # Refresh the PATH environment variable so PowerShell can detect the new Python installation
-        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", [System.EnvironmentVariableTarget]::Machine)
+        Start-Process -FilePath $pythonInstallerPath -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait
 
         # Verify installation by checking the Python path directly
         $pythonPath = (Get-Command python).Source
@@ -57,7 +54,7 @@ try {
 
     # 3. Download Zip from GitHub
     try {
-        $githubRepoZip = "https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip"
+        $githubRepoZip = 'https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip'
         $zipPath = "$env:TEMP\efficientstudentmanagement.zip"
         Invoke-WebRequest -Uri $githubRepoZip -OutFile $zipPath
         Write-Host "GitHub repository downloaded."
@@ -67,12 +64,8 @@ try {
 
     # 4. Unzip the downloaded file and copy content to target location
     try {
-        $targetDir = "C:\efficientstudentmanagement-main"
-        # Remove any existing folder
-        if (Test-Path $targetDir) { Remove-Item -Recurse -Force $targetDir }
-
-        # Unzip the repository directly to the target directory
-        Expand-Archive -Path $zipPath -DestinationPath "C:\" -Force
+        $targetDir = 'C:\efficientstudentmanagement-main'
+        Expand-Archive -Path $zipPath -DestinationPath $targetDir -Force
         Write-Host "Files extracted to $targetDir"
     } catch {
         Handle-Error "Failed to unzip or copy the content to the target location."
@@ -80,8 +73,8 @@ try {
 
     # 5. Run terminal command to install dependencies from the correct requirements file
     try {
-        $requirementsFile = "C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt"
-        Start-Process -NoNewWindow -Wait -FilePath "python" -ArgumentList "-m pip install -r $requirementsFile"
+        $requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
+        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList "-m pip install -r $requirementsFile"
         Write-Host "Dependencies installed successfully."
     } catch {
         Handle-Error "Failed to install Python dependencies."
@@ -89,7 +82,7 @@ try {
 
     # 6. Create a PowerShell link on the desktop
     try {
-        $desktopPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Open Project Folder.lnk")
+        $desktopPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('Desktop'), 'Open Project Folder.lnk')
         $target = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
         $workingDir = $targetDir
         $wScriptShell = New-Object -ComObject WScript.Shell
@@ -104,7 +97,7 @@ try {
 
     # 7. Ask user for API Key
     try {
-        $apiKey = Read-Host -Prompt "Enter your OPENAI_API_KEY"
+        $apiKey = Read-Host -Prompt 'Enter your OPENAI_API_KEY'
         if ([string]::IsNullOrEmpty($apiKey)) {
             Handle-Error "No API key provided."
         } else {
@@ -116,7 +109,7 @@ try {
 
     # 8. Set API key as a global, permanent environment variable
     try {
-        [System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", $apiKey, [System.EnvironmentVariableTarget]::Machine)
+        [System.Environment]::SetEnvironmentVariable('OPENAI_API_KEY', $apiKey, [System.EnvironmentVariableTarget]::Machine)
         Write-Host "OPENAI_API_KEY set as a global environment variable."
     } catch {
         Handle-Error "Failed to set OPENAI_API_KEY as an environment variable."
@@ -125,8 +118,15 @@ try {
     # 9. Test Python Installation
     try {
         Write-Host "Testing Python installation..."
-        Start-Process -NoNewWindow -Wait -FilePath "python" -ArgumentList "-c \"print('Python installation successful!')\""
-        Write-Host "Python test completed successfully."
+
+        # Directly call python and capture output to confirm installation works
+        $pythonTest = & python -c "print('Python installation successful!')" 2>&1
+
+        if ($pythonTest -match "Python installation successful!") {
+            Write-Host "Python test completed successfully."
+        } else {
+            Handle-Error "Python installation test failed. Output: $pythonTest"
+        }
     } catch {
         Handle-Error "Failed to test Python installation."
     }
@@ -134,8 +134,8 @@ try {
     # 10. Test GPT-CLI Command
     try {
         Write-Host "Testing GPT-CLI..."
-        Set-Location "C:\efficientstudentmanagement-main\folders\gpt-cli"
-        Start-Process -NoNewWindow -Wait -FilePath "python" -ArgumentList "gpt.py"
+        Set-Location 'C:\efficientstudentmanagement-main\folders\gpt-cli'
+        Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList 'gpt.py'
         Write-Host "GPT-CLI test completed successfully."
     } catch {
         Handle-Error "Failed to run GPT-CLI test."
@@ -144,5 +144,3 @@ try {
 } finally {
     Write-Host "Script execution completed. Exiting..."
 }
-
-pause
