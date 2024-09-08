@@ -179,6 +179,7 @@ cat <<EOL > "$SECONDARY_REQUIREMENTS_FILE"
 google-generativeai==0.5.4
 boto3==1.28.0
 cohere==5.9.1
+openai==1.44.0
 EOL
 
 # Install the secondary dependencies
