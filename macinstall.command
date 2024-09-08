@@ -22,9 +22,13 @@ if ! command -v brew &> /dev/null; then
     
     osascript <<EOD
     tell application "Terminal"
-        do script "source ~/.bash_profile && source ~/.zshrc && cd ~ && ./macinstall.command"  -- Replace 'macinstall.command' with your script's filename
+        do script "
+        if [ -f ~/.bash_profile ]; then
+            source ~/.bash_profile
+        fi
+        source ~/.zshrc && cd ~ && ./macinstall.command"  -- Replace 'macinstall.command' with your script's filename
         delay 1
-        close (every window whose name contains "bash")
+        close (every window whose name contains 'bash')
     end tell
 EOD
     
@@ -84,7 +88,9 @@ add_api_key_to_profiles ".zshrc"
 
 # Source both profiles to apply the changes
 echo "Sourcing profiles to apply changes..."
-source "$HOME/.bash_profile"
+if [ -f "$HOME/.bash_profile" ]; then
+    source "$HOME/.bash_profile"
+fi
 source "$HOME/.zshrc"
 
 # 8. Test Python 3.11 installation before proceeding
@@ -101,7 +107,11 @@ echo "Installing the correct attrs version (23.2.0)..."
 pip3 uninstall attrs -y || handle_error "Failed to uninstall conflicting attrs version."
 pip3 install attrs==23.2.0 --no-deps || handle_error "Failed to install attrs==23.2.0."
 
-# 11. Upgrade OpenSSL and link it to Python
+# 11. Reinstall pydantic and pydantic_core with correct versions
+echo "Reinstalling pydantic and pydantic_core with correct versions..."
+pip3 install --force-reinstall pydantic==2.0.3 pydantic-core==2.3.0 || handle_error "Failed to reinstall pydantic or pydantic_core."
+
+# 12. Upgrade OpenSSL and link it to Python
 echo "Upgrading OpenSSL to resolve SSL issues..."
 brew install openssl || handle_error "Failed to install OpenSSL."
 echo "Linking OpenSSL to Python..."
@@ -110,11 +120,11 @@ export LDFLAGS="-L/usr/local/opt/openssl/lib"
 export CPPFLAGS="-I/usr/local/opt/openssl/include"
 brew link openssl --force || handle_error "Failed to link OpenSSL."
 
-# 12. Reinstall urllib3 and requests to use the correct OpenSSL version
+# 13. Reinstall urllib3 and requests to use the correct OpenSSL version
 echo "Reinstalling urllib3 and requests with proper OpenSSL support..."
 pip3 install --upgrade urllib3 requests || handle_error "Failed to upgrade urllib3 and requests."
 
-# 13. Download the GitHub repository to the target directory
+# 14. Download the GitHub repository to the target directory
 echo "Downloading the GitHub repository..."
 GITHUB_REPO_URL="https://github.com/cburst/efficientstudentmanagement/archive/refs/heads/main.zip"
 TARGET_DIR="$HOME/efficientstudentmanagement-main"
@@ -122,12 +132,12 @@ ZIP_FILE="$HOME/efficientstudentmanagement.zip"
 
 curl -L "$GITHUB_REPO_URL" -o "$ZIP_FILE" || handle_error "Failed to download the GitHub repository."
 
-# 14. Unzip the downloaded file and move it to the target directory
+# 15. Unzip the downloaded file and move it to the target directory
 echo "Extracting the repository..."
 unzip -o "$ZIP_FILE" -d "$HOME" || handle_error "Failed to unzip the repository."
 rm "$ZIP_FILE"
 
-# 15. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
+# 16. Create a terminal shortcut on the desktop to open in the target directory with environment variables loaded
 echo "Creating a Terminal shortcut on the Desktop..."
 
 SHORTCUT_FILE="$HOME/Desktop/Open_EfficientStudentManagement.command"
@@ -151,17 +161,16 @@ cd "$TARGET_DIR"
 exec /bin/$DEFAULT_SHELL
 EOL
 
-# 16. Apply chmod +x to make the .command file executable
+# 17. Apply chmod +x to make the .command file executable
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
 
-# 17. Run secondary requirements installation after profiles are sourced
+# 18. Run secondary requirements installation after profiles are sourced
 echo "Running secondary requirements installation..."
 SECONDARY_REQUIREMENTS_FILE="$TARGET_DIR/folders/gpt-cli/secondary_requirements.txt"
 
 cat <<EOL > "$SECONDARY_REQUIREMENTS_FILE"
 google-generativeai==0.5.4
-pydantic-core==2.0.1
 boto3==1.28.0
 cohere==5.9.1
 EOL
@@ -169,7 +178,7 @@ EOL
 # Install the secondary dependencies
 pip3 install --no-deps -r "$SECONDARY_REQUIREMENTS_FILE" || handle_error "Failed to install secondary dependencies."
 
-# 18. Launch a new terminal to test GPT-CLI in a new environment
+# 19. Launch a new terminal to test GPT-CLI in a new environment
 echo "Testing GPT-CLI in a new terminal session..."
 
 osascript <<EOD
@@ -182,4 +191,4 @@ end tell
 EOD
 
 echo "Please restart your terminal to fully apply the changes in this session, or you can start a new session with the desktop shortcut."
-echo "Setup complete! You can now double-click the .command file on your Desktop to open the project."
+echo "Setup complete! You can now double-click the .command file on your Desktop to open
