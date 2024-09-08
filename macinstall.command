@@ -26,12 +26,14 @@ if ! command -v brew &> /dev/null; then
         delay 1
         close (every window whose name contains "bash")
     end tell
-    EOD
+EOD
     
     exit 0
 else
     echo "Homebrew is already installed."
 fi
+
+# The script resumes from here when reopened
 
 # 4. Install Python 3.11.9 using Homebrew
 echo "Installing Python 3.11.9 via Homebrew..."
