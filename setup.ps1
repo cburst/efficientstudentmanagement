@@ -124,6 +124,21 @@ try {
 
         if ($pythonTest -match "Python installation successful!") {
             Write-Host "Python test completed successfully."
+
+            # 10. Re-run requirements and secondary requirements
+            try {
+                Write-Host "Re-running requirements.txt and secondary_requirements.txt..."
+                $requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
+                $secondaryRequirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\secondary_requirements.txt'
+
+                # Run both requirements files
+                Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList "-m pip install -r $requirementsFile"
+                Start-Process -NoNewWindow -Wait -FilePath 'python' -ArgumentList "-m pip install -r $secondaryRequirementsFile"
+                Write-Host "Both requirements files installed successfully."
+            } catch {
+                Handle-Error "Failed to run the requirements files again."
+            }
+
         } else {
             Handle-Error "Python installation test failed. Output: $pythonTest"
         }
@@ -131,7 +146,7 @@ try {
         Handle-Error "Failed to test Python installation."
     }
 
-    # 10. Test GPT-CLI Command
+    # 11. Test GPT-CLI Command
     try {
         Write-Host "Testing GPT-CLI..."
         Set-Location 'C:\efficientstudentmanagement-main\folders\gpt-cli'
