@@ -54,7 +54,7 @@ echo "Updating PATH to prioritize Python 3.11..."
 # Function to update or create profile with aliases and Python path
 write_to_profiles() {
     local profile="$1"
-    if [ -f "$HOME/$profile" ]; then
+    if [ -f "$HOME/$profile" ];then
         echo "Updating $profile with Python path and aliases..."
     else
         echo "Creating $profile and adding Python path and aliases..."
@@ -173,26 +173,27 @@ EOL
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
 
-# 18. Launch a new terminal to run secondary requirements and then test GPT-CLI in discrete steps
-echo "Testing GPT-CLI in a new terminal session, running each command as a separate step..."
+# 18. Function to handle missing dependencies and dynamically update secondary_requirements.txt
+install_secondary_requirements() {
+    while true; do
+        echo "Installing secondary requirements..."
+        
+        # Install the secondary requirements
+        pip3 install --no-deps -r secondary_requirements.txt || handle_error "Failed to install secondary requirements."
 
-osascript <<EOD
-tell application "Terminal"
-    do script "
-    source ~/.zshrc" -- First, source the profiles
-    delay 2
-    
-    do script "
-    cd $TARGET_DIR/folders/gpt-cli" in front window -- Then, change to the GPT-CLI directory
-    delay 2
-    
-    do script "
-    pip3 install --no-deps -r secondary_requirements.txt" in front window -- Install secondary requirements
-    delay 2
-    
-    do script "
-    python3 gpt.py" in front window -- Finally, run the GPT-CLI test
-end tell
-EOD
+        # Try running gpt.py and capture the output
+        output=$(python3 gpt.py 2>&1)
 
-echo "Setup complete! Please check the new terminal for GPT-CLI test results."
+        # Check for missing module errors
+        if echo "$output" | grep -q "ModuleNotFoundError"; then
+            # Extract the missing module name
+            missing_module=$(echo "$output" | grep -oP "ModuleNotFoundError: No module named '\K[^']+")
+
+            # Add the missing module to the secondary_requirements.txt
+            if ! grep -q "$missing_module" secondary_requirements.txt; then
+                echo "Adding missing module: $missing_module to secondary_requirements.txt"
+                echo "$missing_module" >> secondary_requirements.txt
+            fi
+
+            # Retry the installation
+            echo
