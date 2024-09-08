@@ -173,30 +173,26 @@ EOL
 echo "Making the .command file executable..."
 chmod +x "$SHORTCUT_FILE" || handle_error "Failed to make .command file executable."
 
-# 18. Run secondary requirements installation after profiles are sourced
-echo "Running secondary requirements installation..."
-SECONDARY_REQUIREMENTS_FILE="$TARGET_DIR/folders/gpt-cli/secondary_requirements.txt"
-
-cat <<EOL > "$SECONDARY_REQUIREMENTS_FILE"
-google-generativeai==0.5.4
-boto3==1.28.0
-cohere==5.9.1
-openai==1.44.0
-EOL
-
-# Install the secondary dependencies
-pip3 install --no-deps -r "$SECONDARY_REQUIREMENTS_FILE" || handle_error "Failed to install secondary dependencies."
-
-# 19. Launch a new terminal to test GPT-CLI in a new environment
-echo "Testing GPT-CLI in a new terminal session..."
+# 18. Launch a new terminal to run secondary requirements and then test GPT-CLI in discrete steps
+echo "Testing GPT-CLI in a new terminal session, running each command as a separate step..."
 
 osascript <<EOD
 tell application "Terminal"
     do script "
-    source ~/.zshrc && \
-    cd $TARGET_DIR/folders/gpt-cli && \
-    python3 gpt.py"
+    source ~/.zshrc" -- First, source the profiles
+    delay 2
+    
+    do script "
+    cd $TARGET_DIR/folders/gpt-cli" in front window -- Then, change to the GPT-CLI directory
+    delay 2
+    
+    do script "
+    pip3 install --no-deps -r secondary_requirements.txt" in front window -- Install secondary requirements
+    delay 2
+    
+    do script "
+    python3 gpt.py" in front window -- Finally, run the GPT-CLI test
 end tell
 EOD
 
-echo
+echo "Setup complete! Please check the new terminal for GPT-CLI test results."
