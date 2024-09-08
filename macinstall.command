@@ -26,9 +26,9 @@ if ! command -v brew &> /dev/null; then
         if [ -f ~/.bash_profile ]; then
             source ~/.bash_profile
         fi
-        source ~/.zshrc && cd ~ && ./macinstall.command"  -- Replace 'macinstall.command' with your script's filename
+        source ~/.zshrc && cd ~ && ./macinstall.command" -- Replace 'macinstall.command' with your script's filename
         delay 1
-        close (every window whose name contains 'bash')
+        close (every window whose name contains "bash")
     end tell
 EOD
     
