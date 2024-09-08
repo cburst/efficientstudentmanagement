@@ -42,6 +42,9 @@ try {
         Invoke-WebRequest -Uri $pythonInstaller -OutFile $pythonInstallerPath
         Start-Process -FilePath $pythonInstallerPath -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
 
+        # Refresh the PATH environment variable so PowerShell can detect the new Python installation
+        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", [System.EnvironmentVariableTarget]::Machine)
+
         # Verify installation by checking the Python path directly
         $pythonPath = (Get-Command python).Source
         if (-not $pythonPath) {
