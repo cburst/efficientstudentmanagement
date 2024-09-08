@@ -5,23 +5,48 @@ function Handle-Error {
     exit 1
 }
 
-# Function to install individual pip packages
+# Function to install individual pip packages after checking if they are installed and at the correct version
 function Install-PipPackage {
     param(
-        [string]$package
+        [string]$package,
+        [string]$version
     )
     try {
-        Write-Host "Installing $package..."
-        $pipInstallOutput = & python -m pip install --force-reinstall --no-cache-dir $package 2>&1
-        Write-Host $pipInstallOutput
-
-        if ($pipInstallOutput -match "Successfully installed") {
-            Write-Host "$package installed successfully."
+        # Check if the package is already installed and matches the version
+        $pipShowOutput = & python -m pip show $package 2>&1
+        if ($pipShowOutput -match "Version: $version") {
+            Write-Host "$package is already installed with the correct version ($version). Skipping installation."
         } else {
-            Write-Host "$package installation failed. See logs above."
+            Write-Host "Installing $package version $version..."
+            $pipInstallOutput = & python -m pip install $package==$version --force-reinstall --no-cache-dir 2>&1
+            Write-Host $pipInstallOutput
+
+            if ($pipInstallOutput -match "Successfully installed") {
+                Write-Host "$package installed successfully."
+            } else {
+                Write-Host "$package installation failed. See logs above."
+            }
         }
     } catch {
         Handle-Error "Failed to install $package."
+    }
+}
+
+# Function to ensure the environment variable is properly set
+function Set-EnvironmentVariableAndRefresh {
+    param(
+        [string]$variableName,
+        [string]$value
+    )
+
+    try {
+        [System.Environment]::SetEnvironmentVariable($variableName, $value, [System.EnvironmentVariableTarget]::Machine)
+        Write-Host "$variableName set as a global environment variable."
+
+        # Refresh environment variables
+        & powershell -ExecutionPolicy Bypass -Command "[System.Environment]::SetEnvironmentVariable('$variableName', '$value', [System.EnvironmentVariableTarget]::Process);"
+    } catch {
+        Handle-Error "Failed to set $variableName as an environment variable."
     }
 }
 
@@ -91,7 +116,7 @@ try {
         Handle-Error "Failed to unzip or copy the content to the target location."
     }
 
-    # 5. Run terminal command to install dependencies from the correct requirements file
+    # 5. Install Dependencies (both from requirements and secondary requirements)
     try {
         $requirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\requirements.txt'
         $secondaryRequirementsFile = 'C:\efficientstudentmanagement-main\folders\gpt-cli\secondary_requirements.txt'
@@ -100,12 +125,18 @@ try {
 
         # Install each package in the requirements file individually
         Get-Content $requirementsFile | ForEach-Object {
-            if ($_ -and $_ -notmatch "^#") { Install-PipPackage $_ }
+            if ($_ -and $_ -notmatch "^#") {
+                $packageDetails = $_.Split("==")
+                Install-PipPackage $packageDetails[0] $packageDetails[1]
+            }
         }
 
         # Install each package in the secondary requirements file individually
         Get-Content $secondaryRequirementsFile | ForEach-Object {
-            if ($_ -and $_ -notmatch "^#") { Install-PipPackage $_ }
+            if ($_ -and $_ -notmatch "^#") {
+                $packageDetails = $_.Split("==")
+                Install-PipPackage $packageDetails[0] $packageDetails[1]
+            }
         }
 
         Write-Host "Dependencies installed successfully."
@@ -140,10 +171,9 @@ try {
         Handle-Error "Failed to read API key from user."
     }
 
-    # 8. Set API key as a global, permanent environment variable
+    # 8. Set API key as a global, permanent environment variable and refresh
     try {
-        [System.Environment]::SetEnvironmentVariable('OPENAI_API_KEY', $apiKey, [System.EnvironmentVariableTarget]::Machine)
-        Write-Host "OPENAI_API_KEY set as a global environment variable."
+        Set-EnvironmentVariableAndRefresh 'OPENAI_API_KEY' $apiKey
     } catch {
         Handle-Error "Failed to set OPENAI_API_KEY as an environment variable."
     }
@@ -166,11 +196,17 @@ try {
 
                 # Install each package individually again in case any were missed
                 Get-Content $requirementsFile | ForEach-Object {
-                    if ($_ -and $_ -notmatch "^#") { Install-PipPackage $_ }
+                    if ($_ -and $_ -notmatch "^#") {
+                        $packageDetails = $_.Split("==")
+                        Install-PipPackage $packageDetails[0] $packageDetails[1]
+                    }
                 }
 
                 Get-Content $secondaryRequirementsFile | ForEach-Object {
-                    if ($_ -and $_ -notmatch "^#") { Install-PipPackage $_ }
+                    if ($_ -and $_ -notmatch "^#") {
+                        $packageDetails = $_.Split("==")
+                        Install-PipPackage $packageDetails[0] $packageDetails[1]
+                    }
                 }
 
                 Write-Host "All individual pip installs completed successfully."
