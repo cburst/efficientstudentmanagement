@@ -5,6 +5,7 @@ google-api-python-client
 google-auth>=2.15.0
 protobuf
 googleapis-common-protos
+grpcio
 
 pydantic-core==2.3.0
 pydantic==2.0.3
@@ -27,7 +28,7 @@ requests>=2.0.0,<3.0.0
 tokenizers>=0.15,<1.0
 types-requests>=2.0.0,<3.0.0
 
-# Dependencies you mentioned
+# Other dependencies you mentioned
 h11>=0.14.0
 distro
 jiter
