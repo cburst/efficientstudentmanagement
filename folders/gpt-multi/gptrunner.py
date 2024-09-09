@@ -2,6 +2,9 @@ import os
 import shutil
 import subprocess
 import sys
+import time
+import csv
+from collections import Counter
 
 def cleanup(directory, tsv_file):
     """Delete the specified directory and TSV file."""
@@ -20,6 +23,35 @@ def cleanup_directory_only(directory):
             shutil.rmtree(directory)
     except Exception as e:
         print(f"Error during directory-only cleanup: {e}")
+
+def check_filename_counts(csv_file):
+    """Check if each unique filename appears exactly 5 times (no header row)."""
+    filename_counts = Counter()
+    
+    with open(csv_file, 'r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+
+        # Count occurrences of filenames (first column)
+        for row in reader:
+            if len(row) > 0:  # Ensure the row is not empty
+                filename = row[0]
+                filename_counts[filename] += 1
+
+
+    # Check if every filename appears exactly 5 times
+    all_filenames_have_5 = all(count == 5 for count in filename_counts.values())
+
+    if all_filenames_have_5:
+        pass  # Do nothing if the condition is True
+    else:
+        print("Some filenames do not appear 5 times.")
+
+    return all_filenames_have_5
+
+def run_python_script(script, argument):
+    """Run the specified Python script with an argument."""
+    script_path = os.path.join(script_dir, script)  # Use script_dir to build the full path
+    subprocess.run([sys.executable, script_path, argument], check=True)  # Use sys.executable
 
 # Get the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -78,38 +110,46 @@ student_number_file = os.path.join(directory_path, "Student Number.txt")
 # Delete the file called "Student Number.txt" after processing
 if os.path.exists(student_number_file):
     os.remove(student_number_file)
-    
+
 # Remove files smaller than 250 bytes in the same directory
 for filename in os.listdir(directory_path):
     file_path = os.path.join(directory_path, filename)
     # Check if it's a file and its size is smaller than 250 bytes
     if os.path.isfile(file_path) and os.path.getsize(file_path) < 250:
-        file_size = os.path.getsize(file_path)  # Get file size before removing
         os.remove(file_path)
 
 # Create an empty CSV file in the script directory (not the target directory)
 csv_file = os.path.join(script_dir, f"{d}.csv")
 open(csv_file, 'a').close()
 
-# Steps 5 and 6: Run fiver.py and cleaner.py on the csv file twice
-def run_python_script(script, argument):
-    script_path = os.path.join(script_dir, script)  # Use script_dir to build the full path
-    subprocess.run([sys.executable, script_path, argument], check=True)  # Use sys.executable
-
 # Ensure the CSV file exists before running the scripts
 if os.path.isfile(csv_file):
-    run_python_script('fiver.py', directory_path)  # Run fiver.py with directory_path argument
-    run_python_script('at_cleaner.py', csv_file)   # Run at_cleaner.py with csv_file argument
-    cleanup_directory_only(directory_path)        # Run the new cleanup function after at_cleaner.py
-    run_python_script('fiver.py', directory_path)  # Repeat as needed
-    run_python_script('all_cleaner.py', csv_file)
-    cleanup_directory_only(directory_path)        # Run the new cleanup function after all_cleaner.py
-    run_python_script('fiver.py', directory_path)
-    run_python_script('at_cleaner.py', csv_file)
-    cleanup_directory_only(directory_path)        # Run the new cleanup function again after at_cleaner.py
-    run_python_script('fiver.py', directory_path)
-    run_python_script('all_cleaner.py', csv_file)
-    cleanup_directory_only(directory_path)        # Run the new cleanup function again after all_cleaner.py
+    run_count = 0
+    max_runs = 10
+
+    while run_count < max_runs:
+        # First, run fiver.py and at_cleaner.py
+        run_python_script('fiver.py', directory_path)  # Run fiver.py with directory_path argument
+        run_python_script('at_cleaner.py', csv_file)   # Run at_cleaner.py with csv_file argument
+        time.sleep(2)
+        cleanup_directory_only(directory_path)        # Run the new cleanup function after at_cleaner.py
+
+        # Now, run all_cleaner.py
+        run_python_script('fiver.py', directory_path)  # Repeat as needed
+        run_python_script('all_cleaner.py', csv_file)
+        time.sleep(2)
+        cleanup_directory_only(directory_path)        # Run the new cleanup function after all_cleaner.py
+
+        # Check if each filename appears exactly 5 times
+        if check_filename_counts(csv_file):
+            print("All filenames appear exactly 5 times. Exiting.")
+            break  # Exit loop if filenames appear 5 times
+
+        run_count += 1  # Increment the run count
+
+    if run_count >= max_runs:
+        print("Warning: Maximum number of runs reached. Some filenames may not appear exactly 5 times.")
+
 else:
     print(f"Error: CSV file '{csv_file}' does not exist.")
 
