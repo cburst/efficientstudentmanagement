@@ -146,6 +146,11 @@ def process_files(working_directory, csv_file):
 
             third_output = send_prompt_and_capture_output(gpt_process, third_prompt, 3)
 
+            # Fourth prompt
+            fourth_prompt = "Please translate all text from the previous message into Korean, except for the text that was checked and the revised text. Specifically, all of the grammar errors should be clearly explained in Korean to benefit Korean learners of English."
+
+            fourth_output = send_prompt_and_capture_output(gpt_process, fourth_prompt, 4)
+
             # End gpt.py session
             end_gpt_session(gpt_process)
 
@@ -153,21 +158,24 @@ def process_files(working_directory, csv_file):
             save_to_text_file('prompt01output.txt', first_output)
             save_to_text_file('prompt02output.txt', second_output)
             save_to_text_file('prompt03output.txt', third_output)
+            save_to_text_file('prompt04output.txt', fourth_output)
 
             # Process the output using the secondlastline and lastline approach
             first_output_processed = process_output_file(first_output)
             second_output_processed = process_output_file(second_output)
             third_output_processed = process_output_file(third_output)
+            fourth_output_processed = process_output_file(fourth_output)
 
             # Save the processed outputs to text files
             save_to_text_file('prompt01output-processed.txt', first_output_processed)
             save_to_text_file('prompt02output-processed.txt', second_output_processed)
             save_to_text_file('prompt03output-processed.txt', third_output_processed)
+            save_to_text_file('prompt04output-processed.txt', fourth_output_processed)
 
             # Writing results to CSV (only responses, not prompts)
             with open(csv_file, mode='a', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
-                writer.writerow([os.path.basename(i), first_output_processed, second_output_processed, third_output_processed])
+                writer.writerow([os.path.basename(i), first_output_processed, second_output_processed, third_output_processed, fourth_output_processed])
                 print(Fore.BLUE + f"Logged output to CSV for {i}")
 
     print(Fore.CYAN + f"Finished processing all eligible files in {working_directory} using OPENAI LLM")
