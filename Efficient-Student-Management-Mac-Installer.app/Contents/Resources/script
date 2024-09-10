@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Get the directory where the Platypus app is running from (inside the app bundle)
+APP_DIR=$(dirname "$0")
+
+# Path to the bundled macinstall.command file inside the app bundle
+MACINSTALL_COMMAND="$APP_DIR/macinstall.command"
+
+# Make the command file executable
+chmod +x "$MACINSTALL_COMMAND"
+
+# Use osascript to open a new Terminal window, bring it to the front, run the command file, and then close the installer app
+osascript <<EOD
+tell application "Terminal"
+    activate
+    do script "$MACINSTALL_COMMAND"
+end tell
+
+tell application "Efficient-Student-Management-Installer" to quit
+EOD
+
+# Exit the shell script
+exit 0
