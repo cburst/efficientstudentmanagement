@@ -16,7 +16,7 @@ tell application "Terminal"
     do script "$MACINSTALL_COMMAND"
 end tell
 
-tell application "Efficient-Student-Management-Installer" to quit
+tell application "Efficient-Student-Management-Mac-Installer" to quit
 EOD
 
 # Exit the shell script
