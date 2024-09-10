@@ -1,0 +1,2 @@
+filename,number_of_syllables,number_of_pauses,rate_of_speech (syllables/sec original duration),articulation_rate (syllables/sec speaking duration),speaking_duration (only speaking duration without pauses),original_duration (total speaking duration with pauses),balance_ratio (speaking duration)/(original duration),f0 mean,f0 stddev,f0 median,f0 min,f0 max,f0quantile25,f0quantile75,pronunciation_posteriori_probability_score_percentage
+RayMockInterview(CARNAGENYC)_DeepFilterNet3.wav,5224,785,3,5,962.3,1579.8,0.6,127.84,25.86,124.4,71,400,112,139,85.14
