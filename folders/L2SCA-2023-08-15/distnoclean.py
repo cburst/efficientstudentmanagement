@@ -1,4 +1,7 @@
 import sys
+
+
+print(f"Using Python: {sys.executable}")
 import os
 import mimetypes
 import nltk.data
@@ -7,6 +10,7 @@ import csv
 import glob
 import re
 import shutil
+
 
 
 def check_pdflatex():
