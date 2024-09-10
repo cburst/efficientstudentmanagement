@@ -124,7 +124,7 @@ def process_files(working_directory, csv_file):
             third_output = send_prompt_and_capture_output(child, "Are you sure there are no other errors? Please carefully double check. Start your answer with all updated error numbers in their delimiters (even if the number of errors for a certain error type is 0), each separated by a space on the first line.")
 
             # Fourth prompt: Translate text to Korean except for checked and revised text
-            fourth_output = send_prompt_and_capture_output(child, "Please translate all text from the previous message into Korean, except for the text that was checked and the revised text. Specifically, I would like the explanations of the grammar errors to be clearly explained in Korean.")
+            fourth_output = send_prompt_and_capture_output(child, "Please translate all text from the previous message into Korean, except for the text that was checked and the revised text. Specifically, all of the grammar errors should be clearly explained in Korean to benefit Korean learners of English.")
 
             # End the session after processing all prompts
             end_gpt_session(child)
