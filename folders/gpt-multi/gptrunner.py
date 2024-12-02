@@ -2,7 +2,6 @@ import os
 import shutil
 import subprocess
 import sys
-import time
 import csv
 from collections import Counter
 
@@ -24,34 +23,43 @@ def cleanup_directory_only(directory):
     except Exception as e:
         print(f"Error during directory-only cleanup: {e}")
 
-def check_filename_counts(csv_file):
-    """Check if each unique filename appears exactly 5 times (no header row)."""
+def count_filename_occurrences_in_csv(directory, csv_file):
+    """Count how many times each filename in the directory appears in the CSV file."""
+    filenames_in_directory = {f: 0 for f in os.listdir(directory) if f.endswith(".txt")}
     filename_counts = Counter()
-    
+
     with open(csv_file, 'r', newline='', encoding='utf-8') as file:
         reader = csv.reader(file)
-
-        # Count occurrences of filenames (first column)
         for row in reader:
-            if len(row) > 0:  # Ensure the row is not empty
-                filename = row[0]
+            if row:  # Ensure row is not empty
+                filename = row[0].strip()  # The filename should be the first column
                 filename_counts[filename] += 1
 
+    # Compare counts with directory filenames
+    filenames_below_5 = {name: filename_counts.get(name, 0) for name in filenames_in_directory if filename_counts.get(name, 0) < 5}
 
-    # Check if every filename appears exactly 5 times
-    all_filenames_have_5 = all(count == 5 for count in filename_counts.values())
-
-    if all_filenames_have_5:
-        pass  # Do nothing if the condition is True
+    # Print filenames that don't appear 5 times
+    if filenames_below_5:
+        print("These filenames do not appear 5 times:")
+        for name, count in filenames_below_5.items():
+            print(f"{name}: {count} times")
     else:
-        print("Some filenames do not appear 5 times.")
+        print("All filenames appear at least 5 times in the CSV.")
 
-    return all_filenames_have_5
+    return filenames_below_5
 
 def run_python_script(script, argument):
     """Run the specified Python script with an argument."""
     script_path = os.path.join(script_dir, script)  # Use script_dir to build the full path
     subprocess.run([sys.executable, script_path, argument], check=True)  # Use sys.executable
+
+def delete_resource_forks(directory):
+    """Delete .DS_Store and other resource forks from the directory."""
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file == ".DS_Store" or file.startswith("._"):
+                file_path = os.path.join(root, file)
+                os.remove(file_path)
 
 # Get the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -101,6 +109,12 @@ with open(target_tsv_file, 'r', encoding='utf-8') as file:
             with open(output_file_path, 'a', encoding='utf-8') as output_file:
                 output_file.write(columns[1])
 
+# Delete any file named ".txt" without a filename prefix
+empty_filename_path = os.path.join(directory_path, ".txt")
+if os.path.exists(empty_filename_path):
+    os.remove(empty_filename_path)
+    print("Deleted file: .txt")
+
 # Delete the TSV file in the target directory after processing
 os.remove(target_tsv_file)
 
@@ -118,6 +132,9 @@ for filename in os.listdir(directory_path):
     if os.path.isfile(file_path) and os.path.getsize(file_path) < 250:
         os.remove(file_path)
 
+# Delete resource forks (e.g., .DS_Store) from the directory
+delete_resource_forks(directory_path)
+
 # Create an empty CSV file in the script directory (not the target directory)
 csv_file = os.path.join(script_dir, f"{d}.csv")
 open(csv_file, 'a').close()
@@ -125,25 +142,33 @@ open(csv_file, 'a').close()
 # Ensure the CSV file exists before running the scripts
 if os.path.isfile(csv_file):
     run_count = 0
-    max_runs = 10
+    max_runs = 5
 
     while run_count < max_runs:
-        # First, run fiver.py and at_cleaner.py
-        run_python_script('fiver.py', directory_path)  # Run fiver.py with directory_path argument
-        run_python_script('at_cleaner.py', csv_file)   # Run at_cleaner.py with csv_file argument
-        time.sleep(2)
-        cleanup_directory_only(directory_path)        # Run the new cleanup function after at_cleaner.py
-
-        # Now, run all_cleaner.py
-        run_python_script('fiver.py', directory_path)  # Repeat as needed
+        # Run cleaner scripts at the start of each loop
+        print(f"Running cleaner scripts at the start of run {run_count + 1}")
+        run_python_script('at_cleaner.py', csv_file)
         run_python_script('all_cleaner.py', csv_file)
-        time.sleep(2)
-        cleanup_directory_only(directory_path)        # Run the new cleanup function after all_cleaner.py
 
-        # Check if each filename appears exactly 5 times
-        if check_filename_counts(csv_file):
-            print("All filenames appear exactly 5 times. Exiting.")
-            break  # Exit loop if filenames appear 5 times
+        # Check for filenames that appear less than 5 times
+        filenames_below_5 = count_filename_occurrences_in_csv(directory_path, csv_file)
+
+        # If no filenames are below 5, exit the loop
+        if not filenames_below_5:
+            print("All filenames appear at least 5 times. Exiting.")
+            break
+
+        # If there are filenames below 5 occurrences, run the fiver.py script
+        print(f"Running fiver.py script due to filenames below 5 occurrences in run {run_count + 1}")
+        run_python_script('fiver.py', directory_path)  # Run fiver.py with directory_path argument
+
+        # Re-run cleaner scripts after fiver.py script
+        print(f"Re-running cleaner scripts after fiver.py execution in run {run_count + 1}")
+        run_python_script('at_cleaner.py', csv_file)
+        run_python_script('all_cleaner.py', csv_file)
+
+        # Re-count filenames after cleaners
+        filenames_below_5 = count_filename_occurrences_in_csv(directory_path, csv_file)
 
         run_count += 1  # Increment the run count
 

@@ -1,0 +1,2 @@
+usage 
+./sherlock -e comparison/folder1/ comparison/folder2/ >> out.csv

@@ -1,0 +1,52 @@
+>
+
+
+
+
+
+
+   Please translate all text from the previous message into Korean, except for t
+                                                                               h
+e text that was checked and the revised text. Specifically, all of the grammar 
+                                                                               e
+rrors should be clearly explained in Korean to benefit Korean learners of Engli
+                                                                               s
+h. Korean learners of English cannot comprehend English grammar error types or 
+                                                                               E
+nglish grammar explanations, so every single grammar error must be accompanied 
+                                                                               b
+y a Korean explanation.> Please translate all text from the previous message into Korean, except for t
+                                                                               h
+e text that was checked and the revised text. Specifically, all of the grammar 
+                                                                               e
+rrors should be clearly explained in Korean to benefit Korean learners of Engli
+                                                                               s
+h. Korean learners of English cannot comprehend English grammar error types or 
+                                                                               E
+nglish grammar explanations, so every single grammar error must be accompanied 
+                                                                               b
+y a Korean explanation.
+!0! #0# €0€ %0% ^2^ &5& £3£ ~0~ +1+ =0= ₩0₩  
+@11@
+
+다시 확인한 결과, 추가적인 구문 오류가 발견되었습니다. 다음은 업데이트된 오류 목록입니다:
+
+1. **구문 오류 (&5&)**: 
+   - "Forecasting future events with temporal knowledge graphs (TKGs) exhibits several challenges due to the inherent incompleteness of TKGs utilized and the difficulty of detecting correlations of multiple events possibly contributing to prediction." - 어색한 표현입니다. "possibly contributing to prediction" 부분이 명확하지 않습니다.
+   - "In this respect, this research needs to be further conducted since the two distinct forms of data and combining them into forecasting events via exploiting semantic descriptions generated from LLMs to generate embeddings of entities and relations in the TKGs is still challenging." - 문장이 복잡하고 이해하기 어렵습니다. 구조를 명확히 해야 합니다.
+   - "First, the dataset considered is confined to political and social events, only containing a small range of relations like “Make an appeal or request” or “Criticize or denounce”, which can be easily divided into positive and negative ones." - "only containing" 부분이 어색합니다. "and only contains"로 수정해야 합니다.
+   - "Therefore, additional studies using datasets that are more representative of real-world scenarios, as well as more effective incorporation of LLMs and TKGs with in-context learning should be investigated." - 문장 구조가 어색합니다. 명확히 하기 위해 재구성해야 합니다.
+   - "This research project also includes limitations regarding datasets and how it utilized LLMs with TKGs." - "how it utilized" 부분이 어색하며 명확히 하기 위해 재구성해야 합니다.
+
+2. **일치 오류 (^2^)**:
+   - "appropriate integration of TKGs and LLMs is required to achieve high prediction accuracy" - 주어-동사 일치 오류입니다. "integration"이 복수형이므로 "are"로 수정해야 합니다.
+   - "This research project also includes limitations regarding datasets and how it utilized LLMs with TKGs." - 시제 일관성 오류입니다. 현재 시제로 "utilizes"로 수정해야 합니다.
+
+3. **구두점 오류 (£3£)**:
+   - "Thus, further research should utilize TKGs for the prediction of events in broader domains with diverse relations that encompass more specific and distinct meanings." - "domains" 뒤에 쉼표가 필요합니다.
+   - "Furthermore, incorporating LLMs to generate embeddings may be insufficient for combining TKGs and LLMs." - "embeddings" 뒤에 쉼표가 필요합니다.
+   - "More research related to in-context learning and prompt engineering could help generate additional information based on the given TKGs.[2]." - 인용구 뒤의 마침표가 불필요합니다.
+
+4. **비관용적 오류 (+1+)**:
+   - "utilizing both the semantic structures of TKGs and the linguistic capabilities of LLMs can overcome those challenges" - "utilizing both" 부분이 어색합니다. "the use of both"로 수정해야 합니다.
+                                    Tokens: 4396 | Price: $0.029 | Total: $0.093

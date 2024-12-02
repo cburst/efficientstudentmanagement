@@ -1,0 +1,21 @@
+@12@
+
+1. "Researchers included an explanation of the whole system mechanism and each implemented circuit's behavior." - The possessive form "circuit's" should be plural possessive "circuits'." (Morphology error)
+
+2. "Researchers demonstrated the performance of the proposed system in severe environments, and each circuit is measured with common equipment." - The verb tense should be consistent; "is measured" should be "was measured." (Tense/aspect error)
+
+3. "The signal-processing perspective is the different research area but recently many research areas are combined." - "The different research area" should be "a different research area," and a comma is needed after "area." (Determiner error, Punctuation error)
+
+4. "Especially for the system analysis article, commonly explains mechanism and principle about it in signal-processing prospect." - This sentence is ungrammatical. It should be rephrased for clarity. (Syntax error, Unidiomatic error)
+
+5. "In this article, this system has deeply related with signal-processing area." - "Has deeply related" should be "is deeply related," and "signal-processing area" should be "the signal-processing area." (Tense/aspect error, Determiner error)
+
+6. "All the researchers in this area mentioned how to control the whole system and why it is a reasonable method to use in the full-duplex system." - "Mentioned" should be "mention" to maintain present tense consistency. (Tense/aspect error)
+
+7. "Still, many researchers are studying about what is the efficient method to control complex hardware and how to implement this method under the commercial communication standard." - "Studying about" should be "studying," and "what is the efficient method" should be "what the efficient method is." (Unidiomatic error, Syntax error)
+
+8. "Overall, the researchers explained the design method and experimental system operation sufficiently but needs to more further discussion of hardware control from a signal processing perspective is necessary." - "Needs to more further discussion" should be "more discussion is needed," and "signal processing" should be hyphenated as "signal-processing." (Syntax error, Punctuation error)
+
+Revised paragraph:
+
+A radio frequency (RF) circuit and system for analog cancellation of self-interference signals in a full-duplex radio system was recently proposed. Researchers included an explanation of the whole system mechanism and each implemented circuits' behavior. Furthermore, researchers focused on the microwave circuit design and the required performance of each circuit. Researchers demonstrated the performance of the proposed system in severe environments, and each circuit was measured with common equipment. However, researchers provided an incomplete explanation of how the system works from a signal-processing perspective. The signal-processing perspective is a different research area, but recently many research areas are combined. Especially in system analysis articles, the mechanism and principles are commonly explained from a signal-processing perspective. In this article, this system is deeply related to the signal-processing area. All the researchers in this area mention how to control the whole system and why it is a reasonable method to use in the full-duplex system. Still, many researchers are studying what the efficient method is to control complex hardware and how to implement this method under the commercial communication standard. Overall, the researchers explained the design method and experimental system operation sufficiently, but more discussion of hardware control from a signal-processing perspective is necessary.

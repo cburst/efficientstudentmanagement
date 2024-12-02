@@ -1,7 +1,0 @@
-filename,number_of_syllables,number_of_pauses,rate_of_speech (syllables/sec original duration),articulation_rate (syllables/sec speaking duration),speaking_duration (only speaking duration without pauses),original_duration (total speaking duration with pauses),balance_ratio (speaking duration)/(original duration),f0 mean,f0 stddev,f0 median,f0 min,f0 max,f0quantile25,f0quantile75,pronunciation_posteriori_probability_score_percentage
-speechify2024324126_speechify-090924-0000-James-issong_DeepFilterNet3.wav,395,18,4,5,84.1,95.6,0.9,109.2,28.28,103.9,80,379,95,114,100.00
-2023324139_yejinson_week1-YejinSon_DeepFilterNet3.wav,462,26,4,5,100.5,115.4,0.9,238.93,39.31,233.0,81,392,216,257,100.00
-2024324126_speaking1-issong_DeepFilterNet3.wav,411,60,3,4,110.1,154.3,0.7,105.25,33.29,93.0,70,400,87,111,70.32
-speechify2023324139-090824-2308-Lindsey_DeepFilterNet3.wav,442,23,4,4,99.2,112.1,0.9,218.83,36.79,214.3,70,395,194,241,100.00
-2022314088_tc_script_record_w1-HyesukChae_DeepFilterNet3.wav,364,31,3,4,89.0,113.2,0.8,195.33,26.99,190.6,78,372,177,209,89.97
-speechify2022314088_speechify-090824-1544-Monica-HyesukChae_DeepFilterNet3.wav,309,19,4,4,72.5,82.4,0.9,187.97,23.98,185.1,72,310,173,200,95.04

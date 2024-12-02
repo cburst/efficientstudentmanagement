@@ -1,0 +1,22 @@
+>
+
+
+
+
+
+
+   On a scale from -1 to +1, with -1 being completely negative and +1 being comp
+                                                                               l
+etely positive, how would you rate the sample text. reply with only numerals, a
+single decimal point, and a plus or minus symbol, no other characters whatsoeve
+                                                                               r
+ (especially no introduction or conclusion sentences, as these will disrupt the
+analysis process).> On a scale from -1 to +1, with -1 being completely negative and +1 being comp
+                                                                               l
+etely positive, how would you rate the sample text. reply with only numerals, a
+single decimal point, and a plus or minus symbol, no other characters whatsoeve
+                                                                               r
+ (especially no introduction or conclusion sentences, as these will disrupt the
+analysis process).
++0.1
+                                    Tokens: 2753 | Price: $0.014 | Total: $0.041
