@@ -1,110 +1,142 @@
 import os
-import shutil
+import csv
 import sys
 import subprocess
-import csv
-import time
+import shutil
+
 
 def main():
     if len(sys.argv) != 2:
         print("Error: No directory name provided.")
         sys.exit(1)
-    
-    d = sys.argv[1]
-    base_dir = os.getcwd()
 
-    # Define the path to the input-files directory
-    input_files_dir = os.path.join(base_dir, "input-files")
+    working_dir = os.getcwd()
+    input_dir = os.path.join(working_dir, "input-files")
+    output_dir = os.path.join(working_dir, "output-files")
+    folder_dir = os.path.join(working_dir, "folders", "L2SCA-2023-08-15")
+    os.makedirs(folder_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
-    tsv_file = os.path.join(input_files_dir, f"{d}raw.tsv")
+    tsv_file = os.path.join(input_dir, f"{sys.argv[1]}raw.tsv")
     if not os.path.isfile(tsv_file):
-        print(f"Error: TSV file '{tsv_file}' not found in {input_files_dir}.")
+        print(f"Error: TSV file '{tsv_file}' not found.")
         sys.exit(1)
 
-    destination_folder = os.path.join(base_dir, "folders", "L2SCA-2023-08-15")
-    os.makedirs(destination_folder, exist_ok=True)
+    # Create the working directory inside folders/L2SCA-2023-08-15
+    individual_files_dir = os.path.join(folder_dir, sys.argv[1])
+    os.makedirs(individual_files_dir, exist_ok=True)
 
-    destination_file = os.path.join(destination_folder, os.path.basename(tsv_file))
-    shutil.copy(tsv_file, destination_file)
-    print(f"Copied '{tsv_file}' to '{destination_file}'.")
+    # Expand TSV into individual text files
+    total_files_created = expand_tsv(tsv_file, individual_files_dir)
+    print(f"Total files created from TSV: {total_files_created}")
 
-    subdirectory_path = os.path.join(destination_folder, d)
-    os.makedirs(subdirectory_path, exist_ok=True)
+    # Process individual files
+    final_csv_path = os.path.join(output_dir, f"{sys.argv[1]}-L2SCA-processed.csv")
+    total_files_processed = process_individual_files(individual_files_dir, folder_dir, final_csv_path)
 
-    subfolder_destination_file = os.path.join(subdirectory_path, os.path.basename(tsv_file))
-    shutil.copy(destination_file, subfolder_destination_file)
-    print(f"Copied to subfolder: '{subfolder_destination_file}'.")
+    # Confirm the number of processed files
+    print(f"Total files processed successfully: {total_files_processed}")
 
-    # Remove any files in the subdirectory with a size of less than 20 bytes
-    remove_small_files(subdirectory_path)
+    # Delete the working directory
+    delete_directory(individual_files_dir)
 
-    process_tsv_with_python(subfolder_destination_file)
+    print(f"Processing complete. Final CSV saved to {final_csv_path}")
 
-    if os.path.exists("Student Number.txt"):
-        os.remove("Student Number.txt")
-    os.remove(subfolder_destination_file)
-    
-    # Run Python analysis script
-    analyzefolder_path = os.path.join(destination_folder, "analyzefolder.py")
-    command = [sys.executable, analyzefolder_path, d, f"{d}.csv"]
-    subprocess.run(command, cwd=destination_folder, check=True)
 
-    # Check if the CSV file exists and is not empty
-    final_csv_source = os.path.join(destination_folder, f"{d}.csv")
-    if not os.path.isfile(final_csv_source) or os.path.getsize(final_csv_source) == 0:
-        print(f"Error: CSV file '{final_csv_source}' not found or is empty.")
-        sys.exit(1)
+def expand_tsv(tsv_file, output_dir):
+    """Expand TSV into individual text files."""
+    file_count = 0
+    with open(tsv_file, newline='', encoding='utf-8') as tsv:
+        reader = csv.reader(tsv, delimiter='\t')
+        for row in reader:
+            if len(row) < 2 or not row[0].strip() or not row[1].strip():
+                print(f"Skipping invalid or empty row: {row}")
+                continue
+            filename = os.path.join(output_dir, f"{row[0].strip()}.txt")
+            with open(filename, "w", encoding="utf-8") as txt_file:
+                txt_file.write(row[1].strip())
+                file_count += 1
+    print(f"TSV expanded into individual text files in {output_dir}.")
+    return file_count
 
-    # Optional: Wait briefly to ensure file I/O operations have settled - can adjust based on need
-    time.sleep(1)
 
-    # Copy the final CSV to the 'output-files' directory
-    final_csv_destination = os.path.join(base_dir, "output-files", f"{d}-L2SCA-processed.csv")
-    os.makedirs(os.path.dirname(final_csv_destination), exist_ok=True)
-    shutil.copy(final_csv_source, final_csv_destination)
-    print(f"Final CSV copied to '{final_csv_destination}'.")
+def process_individual_files(working_dir, folder_dir, final_csv_path):
+    """Process each individual file."""
+    csv_writer = None
+    processed_count = 0
 
-    # Cleanup: delete the {d} directory and the TSV file from the L2SCA folder
-    cleanup(subdirectory_path, destination_file)
+    for filename in os.listdir(working_dir):
+        file_path = os.path.join(working_dir, filename)
 
-def remove_small_files(directory, size_limit=20):
-    """Remove files in the directory that are smaller than the size_limit (in bytes)."""
-    for filename in os.listdir(directory):
-        filepath = os.path.join(directory, filename)
-        if os.path.isfile(filepath) and os.path.getsize(filepath) < size_limit:
-            print(f"Removing {filepath} (Size: {os.path.getsize(filepath)} bytes)")
-            os.remove(filepath)
+        # Skip "Student Number.txt" and files smaller than 20B
+        if filename == "Student Number.txt" or os.path.getsize(file_path) < 20:
+            print(f"Skipping unnecessary file: {filename}")
+            continue
 
-def process_tsv_with_python(tsv_file):
-    base_dir = os.getcwd()  # Ensure base directory is set
-    destination_folder = os.path.join(base_dir, "folders", "L2SCA-2023-08-15")
-    subdirectory_path = os.path.join(destination_folder, os.path.basename(tsv_file).replace("raw.tsv", ""))  # Assuming tsv_file naming follows a specific pattern
-    os.makedirs(subdirectory_path, exist_ok=True)  # Make sure the subdirectory exists
+        if not filename.endswith(".txt"):
+            continue
 
-    with open(tsv_file, newline='', encoding='utf-8') as file:
-        reader = csv.reader(file, delimiter='\t')
-        output_files = {}
+        # Copy individual text file to L2SCA-2023-08-15
+        folder_text_file = os.path.join(folder_dir, filename)
+        shutil.copy(file_path, folder_text_file)
+
+        # Run analyzeText.py on the copied file
+        folder_csv_file = folder_text_file.replace(".txt", ".csv")
         try:
-            for row in reader:
-                if row[0] == "Student Number":
-                    continue  # Skip unwanted header or specific row
-                file_name = os.path.join(subdirectory_path, f"{row[0]}.txt")
-                if file_name not in output_files:
-                    output_files[file_name] = open(file_name, 'w', encoding='utf-8')
-                output_files[file_name].write(row[1] + '\n')
-        finally:
-            for f in output_files.values():
-                f.close()
+            # Change working directory to folder_dir and use relative paths
+            command = [
+                sys.executable,
+                "analyzeText.py",
+                filename,  # Pass only the filename, not the full path
+                filename.replace(".txt", ".csv"),
+            ]
+            subprocess.run(command, cwd=folder_dir, check=True)
 
-def cleanup(directory, tsv_file):
-    """Delete the specified directory and TSV file."""
+            # Verify the output CSV exists
+            if os.path.isfile(folder_csv_file):
+                # Add content of individual CSV to final CSV
+                with open(folder_csv_file, "r", newline="", encoding="utf-8") as csv_file:
+                    reader = csv.reader(csv_file)
+                    if csv_writer is None:
+                        with open(final_csv_path, "w", newline="", encoding="utf-8") as final_csv:
+                            csv_writer = csv.writer(final_csv)
+                            csv_writer.writerow(next(reader))  # Write header
+                    else:
+                        next(reader)  # Skip header
+                    with open(final_csv_path, "a", newline="", encoding="utf-8") as final_csv:
+                        csv_writer = csv.writer(final_csv)
+                        csv_writer.writerows(reader)
+                processed_count += 1
+            else:
+                print(f"Error: Expected CSV output not found for {filename}")
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error processing {filename}: {e}")
+        except FileNotFoundError as e:
+            print(f"File not found error: {e}")
+
+        # Clean up individual text and CSV files
+        if os.path.exists(folder_text_file):
+            os.remove(folder_text_file)
+        if os.path.exists(folder_csv_file):
+            os.remove(folder_csv_file)
+        print(f"Processed and cleaned up {filename}.")
+
+    print(f"All files processed. Final CSV is at {final_csv_path}.")
+    return processed_count
+
+
+def delete_directory(directory_path):
+    """Delete the specified directory."""
     try:
-        if os.path.exists(directory):
-            shutil.rmtree(directory)
-        if os.path.exists(tsv_file):
-            os.remove(tsv_file)
+        if os.path.exists(directory_path):
+            shutil.rmtree(directory_path)
+            print(f"Deleted working directory: {directory_path}")
+        else:
+            print(f"Directory does not exist: {directory_path}")
     except Exception as e:
-        print(f"Error during cleanup: {e}")
+        print(f"Error deleting directory {directory_path}: {e}")
+
 
 if __name__ == "__main__":
     main()
