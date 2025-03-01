@@ -198,8 +198,8 @@ def process_csv(csv_filename):
 # ------------------- Part 2: Pronunciation Assessment -------------------
 
 # Azure Speech Service configuration
-speech_key = "5Ea0rfCOsvxM4hWHjgvWC6yp0VGGWVyzctYNKgNl67p1DnabZsWlJQQJ99ALACNns7RXJ3w3AAAYACOGsz49"
-service_region = "koreacentral"
+speech_key = "YOUR_KEY_HERE"
+service_region = "YOUR_REGION_HERE"
 language = "en-US"
 
 if __name__ == "__main__":
