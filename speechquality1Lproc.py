@@ -128,39 +128,24 @@ def convert_to_wav(file_path, destination_folder):
 
 def download_from_google_drive(file_id, destination_folder, target_filename, service, process_audio=False, convert_only=False):
     try:
-        print(f"🔍 Checking file ID: {file_id}")
         request = service.files().get_media(fileId=file_id)
         file_metadata = service.files().get(fileId=file_id).execute()
-        print(f"📄 File found: {file_metadata.get('name')} ({file_id})")
-        
         original_filename = file_metadata.get('name', 'downloaded_file')
         file_extension = os.path.splitext(original_filename)[1]
         target_filename_with_ext = f"{target_filename}{file_extension}"
         file_path = os.path.join(destination_folder, target_filename_with_ext)
-        
-        print(f"📥 Downloading to: {file_path}")
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done_download = False
-        pbar = tqdm(total=100, desc=f"Downloading {target_filename_with_ext}", unit='%')
-        
+        pbar = tqdm(total=100, desc=f"📥 Downloading {target_filename_with_ext}", unit='%')
         while not done_download:
             status, done_download = downloader.next_chunk()
             pbar.update(int(status.progress() * 100) - pbar.n)
         pbar.close()
-
         with open(file_path, 'wb') as f:
             f.write(fh.getvalue())
-
-        print(f"✅ Successfully downloaded: {file_path}")
-
-        if not os.path.exists(file_path):
-            print(f"❌ ERROR: Downloaded file not found: {file_path}")
-            return None
-
-        # If audio processing is needed
+        print(f"✅ Downloaded: {file_path}")
         if process_audio:
-            print(f"🔊 Processing audio: {file_path}")
             volume_adjusted_file = adjust_volume(file_path, destination_folder)
             cleaned_file = apply_noise_filter(volume_adjusted_file, destination_folder)
             return cleaned_file
@@ -168,11 +153,10 @@ def download_from_google_drive(file_id, destination_folder, target_filename, ser
             return convert_to_wav(file_path, destination_folder)
         else:
             return file_path
-
     except Exception as e:
-        print(f"❌ Download error: {e}")
+        print(f"❌ Error downloading file from Google Drive: {e}")
         return None
-        
+
 def create_text_file(folder, filename, content):
     file_path = os.path.join(folder, filename)
     with open(file_path, "w", encoding="utf-8") as f:
@@ -182,62 +166,34 @@ def create_text_file(folder, filename, content):
 def process_csv(csv_filename):
     creds = authenticate_google_api()
     service = build('drive', 'v3', credentials=creds)
-
-    print(f"🔍 Checking for CSV file: {csv_filename}")
     if not os.path.isfile(csv_filename):
-        print(f"❌ ERROR: File '{csv_filename}' not found. Check the path.")
+        print(f"❌ Error: File '{csv_filename}' not found.")
         return
-    
-    print(f"✅ CSV file found: {csv_filename}")
-
     with open(csv_filename, newline='', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile, quotechar='"')  # Use quotechar to handle text correctly
-        row = next(reader)  # Read first row
-    
-    print(f"📄 CSV First Row: {row}")  # Debug CSV content
-
-    # Ensure correct data parsing
-    if len(row) < 6:
-        print(f"❌ ERROR: CSV row does not have enough columns! Got {len(row)} columns.")
-        return
-
-    student_number = row[0]
-    student_audio_link = row[1]
-    model_audio_link = row[2]
-    text = row[3]  # Transcript text
-    email = row[4]
-    name = row[5]
-
+        reader = csv.reader(csvfile)
+        row = next(reader)
+    student_number = row[3]
+    student_audio_link = row[5]
+    model_audio_link = row[5]
+    text = row[4]
+    email = row[1]
+    name = row[2]
     folder_name = os.path.splitext(csv_filename)[0]
-    print(f"📂 Creating/using folder: {folder_name}")
     os.makedirs(folder_name, exist_ok=True)
-
     create_text_file(folder_name, "name.txt", name)
     create_text_file(folder_name, "studentnumber.txt", student_number)
     create_text_file(folder_name, "text.txt", text)
     create_text_file(folder_name, "email.txt", email)
-
     # Process Student Audio (download, adjust volume, noise filter)
     if student_audio_link:
-        print(f"🎵 Student Audio Link: {student_audio_link}")
         student_audio_id = extract_drive_file_id(student_audio_link)
-        print(f"📥 Extracted Student Audio ID: {student_audio_id}")
         if student_audio_id:
-            downloaded_student_audio = download_from_google_drive(student_audio_id, folder_name, "studentaudio", service, process_audio=True)
-            print(f"✅ Student audio downloaded to: {downloaded_student_audio}")
-        else:
-            print(f"❌ ERROR: Could not extract File ID from student audio link: {student_audio_link}")
-
+            download_from_google_drive(student_audio_id, folder_name, "studentaudio", service, process_audio=True)
     # Download Model Audio (convert to WAV only)
-    if model_audio_link:
-        print(f"🎵 Model Audio Link: {model_audio_link}")
-        model_audio_id = extract_drive_file_id(model_audio_link)
-        print(f"📥 Extracted Model Audio ID: {model_audio_id}")
-        if model_audio_id:
-            downloaded_model_audio = download_from_google_drive(model_audio_id, folder_name, "modelaudio", service, convert_only=True)
-            print(f"✅ Model audio downloaded to: {downloaded_model_audio}")
-        else:
-            print(f"❌ ERROR: Could not extract File ID from model audio link: {model_audio_link}")
+    # if model_audio_link:
+        # model_audio_id = extract_drive_file_id(model_audio_link)
+        # if model_audio_id:
+            # download_from_google_drive(model_audio_id, folder_name, "modelaudio", service, convert_only=True)
 
 # ------------------- Part 2: Pronunciation Assessment -------------------
 

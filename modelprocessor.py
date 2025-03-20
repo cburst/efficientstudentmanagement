@@ -2,17 +2,34 @@
 # coding: utf-8
 """
 Combined Script:
-Part 1 – CSV Processing & Audio Download:
-  - Changes to a hardcoded base directory.
-  - Authenticates with Google Drive.
-  - Creates a folder (named after the CSV file without extension) and writes text files.
-  - Downloads two audio files and processes the student audio to produce studentaudio_adjusted_cleaned.wav.
-Part 2 – Pronunciation Assessment:
-  - Reads the transcript (text.txt) and splits it into sentences.
-  - Uses Azure Speech SDK to obtain word-level timestamps from studentaudio_adjusted_cleaned.wav.
-  - Aligns recognized words with the transcript to determine sentence boundaries.
-  - Segments the audio into individual sentence files saved in a “segments” subfolder.
-  - Runs pronunciation assessment on each segmented sentence file and writes results to two CSV files.
+Part 1 – CSV Processing & Audio Download (for reference)
+Part 2 – Pronunciation Assessment
+
+Directory structure expected (relative to this script):
+    folders/
+        tcs/
+            tcs-w01/
+                oneliners/
+                    subfolder1/   <- processing happens here
+                    subfolder2/
+                    ...
+            tcs-w02/
+                oneliners/
+                    ...
+        ipe/
+            (similar structure)
+        capstone/
+            (similar structure)
+
+For each subfolder found inside an oneliners folder, the script will:
+  - Check for the required files (modelaudio.wav and text.txt).
+  - If a modelaudio folder already exists and contains both
+    sentence_level_results.csv and word_level_results.csv (non-zero size),
+    skip processing.
+  - Otherwise, copy files to a dedicated "modelaudio" subfolder,
+    run sentence segmentation, Azure Speech processing, audio segmentation,
+    and pronunciation assessment.
+  - Write the results to CSV files.
 """
 
 import os
@@ -35,12 +52,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import azure.cognitiveservices.speech as speechsdk
 
-# Declare global variable for recognition control
-done = False
-
 # ------------------- Part 1: CSV Processing & Audio Download -------------------
 
-# Google API Scope and credentials
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 TOKEN_FILE = "token.pickle"
 CREDENTIALS_FILE = "client_secret.json"
@@ -94,7 +107,6 @@ def adjust_volume(file_path, destination_folder):
         return file_path  # analysis failed; return original
     required_increase = DESIRED_VOLUME_THRESHOLD - mean_volume
     file_root = os.path.splitext(os.path.basename(file_path))[0]
-    # Create an adjusted file name e.g. studentaudio_adjusted.wav
     wav_file = os.path.join(destination_folder, f"{file_root}_adjusted.wav")
     if required_increase > 0:
         print(f"🎚️ Increasing volume by {required_increase} dB and converting {file_path} to WAV")
@@ -105,14 +117,12 @@ def adjust_volume(file_path, destination_folder):
     return wav_file
 
 def apply_noise_filter(input_file, destination_folder):
-    # Ensure the adjusted tag is preserved so that we get studentaudio_adjusted_cleaned.wav
     file_root, _ = os.path.splitext(os.path.basename(input_file))
     if not file_root.endswith("_adjusted"):
         file_root = file_root + "_adjusted"
     cleaned_file = os.path.join(destination_folder, f"{file_root}_cleaned.wav")
     print(f"🧹 Applying noise filter to {input_file}")
     subprocess.run(['ffmpeg', '-i', input_file, '-af', 'afftdn', cleaned_file], check=True)
-    # Optionally remove the intermediate adjusted file if desired
     if os.path.exists(input_file):
         os.remove(input_file)
         print(f"🗑️ Removed temporary file: {input_file}")
@@ -128,39 +138,24 @@ def convert_to_wav(file_path, destination_folder):
 
 def download_from_google_drive(file_id, destination_folder, target_filename, service, process_audio=False, convert_only=False):
     try:
-        print(f"🔍 Checking file ID: {file_id}")
         request = service.files().get_media(fileId=file_id)
         file_metadata = service.files().get(fileId=file_id).execute()
-        print(f"📄 File found: {file_metadata.get('name')} ({file_id})")
-        
         original_filename = file_metadata.get('name', 'downloaded_file')
         file_extension = os.path.splitext(original_filename)[1]
         target_filename_with_ext = f"{target_filename}{file_extension}"
         file_path = os.path.join(destination_folder, target_filename_with_ext)
-        
-        print(f"📥 Downloading to: {file_path}")
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done_download = False
-        pbar = tqdm(total=100, desc=f"Downloading {target_filename_with_ext}", unit='%')
-        
+        pbar = tqdm(total=100, desc=f"📥 Downloading {target_filename_with_ext}", unit='%')
         while not done_download:
             status, done_download = downloader.next_chunk()
             pbar.update(int(status.progress() * 100) - pbar.n)
         pbar.close()
-
         with open(file_path, 'wb') as f:
             f.write(fh.getvalue())
-
-        print(f"✅ Successfully downloaded: {file_path}")
-
-        if not os.path.exists(file_path):
-            print(f"❌ ERROR: Downloaded file not found: {file_path}")
-            return None
-
-        # If audio processing is needed
+        print(f"✅ Downloaded: {file_path}")
         if process_audio:
-            print(f"🔊 Processing audio: {file_path}")
             volume_adjusted_file = adjust_volume(file_path, destination_folder)
             cleaned_file = apply_noise_filter(volume_adjusted_file, destination_folder)
             return cleaned_file
@@ -168,11 +163,10 @@ def download_from_google_drive(file_id, destination_folder, target_filename, ser
             return convert_to_wav(file_path, destination_folder)
         else:
             return file_path
-
     except Exception as e:
-        print(f"❌ Download error: {e}")
+        print(f"❌ Error downloading file from Google Drive: {e}")
         return None
-        
+
 def create_text_file(folder, filename, content):
     file_path = os.path.join(folder, filename)
     with open(file_path, "w", encoding="utf-8") as f:
@@ -180,64 +174,35 @@ def create_text_file(folder, filename, content):
     print(f"✅ Created {filename}")
 
 def process_csv(csv_filename):
+    # (This function is retained for reference from the original script.)
     creds = authenticate_google_api()
     service = build('drive', 'v3', credentials=creds)
-
-    print(f"🔍 Checking for CSV file: {csv_filename}")
     if not os.path.isfile(csv_filename):
-        print(f"❌ ERROR: File '{csv_filename}' not found. Check the path.")
+        print(f"❌ Error: File '{csv_filename}' not found.")
         return
-    
-    print(f"✅ CSV file found: {csv_filename}")
-
     with open(csv_filename, newline='', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile, quotechar='"')  # Use quotechar to handle text correctly
-        row = next(reader)  # Read first row
-    
-    print(f"📄 CSV First Row: {row}")  # Debug CSV content
-
-    # Ensure correct data parsing
-    if len(row) < 6:
-        print(f"❌ ERROR: CSV row does not have enough columns! Got {len(row)} columns.")
-        return
-
+        reader = csv.reader(csvfile)
+        row = next(reader)
     student_number = row[0]
     student_audio_link = row[1]
     model_audio_link = row[2]
-    text = row[3]  # Transcript text
+    text = row[3]
     email = row[4]
     name = row[5]
-
     folder_name = os.path.splitext(csv_filename)[0]
-    print(f"📂 Creating/using folder: {folder_name}")
     os.makedirs(folder_name, exist_ok=True)
-
     create_text_file(folder_name, "name.txt", name)
     create_text_file(folder_name, "studentnumber.txt", student_number)
     create_text_file(folder_name, "text.txt", text)
     create_text_file(folder_name, "email.txt", email)
-
-    # Process Student Audio (download, adjust volume, noise filter)
     if student_audio_link:
-        print(f"🎵 Student Audio Link: {student_audio_link}")
         student_audio_id = extract_drive_file_id(student_audio_link)
-        print(f"📥 Extracted Student Audio ID: {student_audio_id}")
         if student_audio_id:
-            downloaded_student_audio = download_from_google_drive(student_audio_id, folder_name, "studentaudio", service, process_audio=True)
-            print(f"✅ Student audio downloaded to: {downloaded_student_audio}")
-        else:
-            print(f"❌ ERROR: Could not extract File ID from student audio link: {student_audio_link}")
-
-    # Download Model Audio (convert to WAV only)
+            download_from_google_drive(student_audio_id, folder_name, "studentaudio", service, process_audio=True)
     if model_audio_link:
-        print(f"🎵 Model Audio Link: {model_audio_link}")
         model_audio_id = extract_drive_file_id(model_audio_link)
-        print(f"📥 Extracted Model Audio ID: {model_audio_id}")
         if model_audio_id:
-            downloaded_model_audio = download_from_google_drive(model_audio_id, folder_name, "modelaudio", service, convert_only=True)
-            print(f"✅ Model audio downloaded to: {downloaded_model_audio}")
-        else:
-            print(f"❌ ERROR: Could not extract File ID from model audio link: {model_audio_link}")
+            download_from_google_drive(model_audio_id, folder_name, "modelaudio", service, convert_only=True)
 
 # ------------------- Part 2: Pronunciation Assessment -------------------
 
@@ -246,49 +211,75 @@ speech_key = "YOUR KEY HERE"
 service_region = "koreacentral"
 language = "en-US"
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("⚠️ Usage: python combined_script.py <csv_filename>")
-        sys.exit(1)
+# Global recognition control flag
+done = False
 
-    # Part 1: Process CSV and download/process audio
-    csv_filename = sys.argv[1]
-    process_csv(csv_filename)
-    folder_name = os.path.splitext(csv_filename)[0]
+def process_oneliners_folder(target_folder):
+    """
+    Process a folder (target_folder) that is expected to contain
+    'modelaudio.wav' and 'text.txt' and perform the pronunciation assessment.
+    """
+    print(f"\n🔍 Processing folder: {target_folder}")
+    # Verify required files are present
+    source_modelaudio = os.path.join(target_folder, "modelaudio.wav")
+    source_text = os.path.join(target_folder, "text.txt")
+    if not os.path.exists(source_modelaudio):
+        print(f"❌ Error: 'modelaudio.wav' not found in {target_folder}.")
+        return
+    if not os.path.exists(source_text):
+        print(f"❌ Error: 'text.txt' not found in {target_folder}.")
+        return
 
-    # Define paths for transcript and processed student audio
-    transcript_filename = os.path.join(folder_name, "text.txt")
-    full_audio_filename = os.path.join(folder_name, "studentaudio_adjusted_cleaned.wav")
+    # Define the modelaudio folder path
+    modelaudio_folder = os.path.join(target_folder, "modelaudio")
+    sentence_csv_file = os.path.join(modelaudio_folder, "sentence_level_results.csv")
+    word_csv_file = os.path.join(modelaudio_folder, "word_level_results.csv")
+    # Check if the modelaudio folder already exists and has non-zero CSV files
+    if os.path.exists(modelaudio_folder):
+        if (os.path.isfile(sentence_csv_file) and os.path.getsize(sentence_csv_file) > 0 and
+            os.path.isfile(word_csv_file) and os.path.getsize(word_csv_file) > 0):
+            print(f"✅ Processed CSV files already exist in {modelaudio_folder}. Skipping folder.")
+            return
+
+    # Create or update the modelaudio folder and copy required files
+    os.makedirs(modelaudio_folder, exist_ok=True)
+    shutil.copy(source_modelaudio, modelaudio_folder)
+    shutil.copy(source_text, modelaudio_folder)
+    print(f"✅ Copied 'modelaudio.wav' and 'text.txt' into {modelaudio_folder}")
+
+    # Begin Pronunciation Assessment Process
+    transcript_filename = os.path.join(modelaudio_folder, "text.txt")
+    full_audio_filename = os.path.join(modelaudio_folder, "modelaudio.wav")
+    
     if not os.path.exists(full_audio_filename):
-        print(f"❌ Processed student audio not found: {full_audio_filename}")
-        sys.exit(1)
+        print(f"❌ Processed audio file not found: {full_audio_filename}")
+        return
     if not os.path.exists(transcript_filename):
         print(f"❌ Transcript file not found: {transcript_filename}")
-        sys.exit(1)
+        return
 
     print("\nStarting pronunciation assessment...")
     print(f"Audio: {full_audio_filename}")
     print(f"Transcript: {transcript_filename}\n")
-
-    # Prepare output CSV file paths (saved inside the CSV folder)
-    sentence_csv_file = os.path.join(folder_name, "sentence_level_results.csv")
-    word_csv_file = os.path.join(folder_name, "word_level_results.csv")
-
-    # Create a subfolder for segmented sentence audio files
-    segments_folder = os.path.join(folder_name, "segments")
+    
+    # Set up output CSV paths
+    sentence_csv_file = os.path.join(modelaudio_folder, "sentence_level_results.csv")
+    word_csv_file = os.path.join(modelaudio_folder, "word_level_results.csv")
+    
+    # Create a subfolder for segmented audio files
+    segments_folder = os.path.join(modelaudio_folder, "segments")
     os.makedirs(segments_folder, exist_ok=True)
-
+    
     # Step 1: Read and sentence-segment the transcript
     with open(transcript_filename, "r", encoding="utf-8") as f:
         transcript = f.read().strip()
-    # Ensure NLTK sentence tokenizer is ready (uncomment if needed)
-    # nltk.download('punkt')
+    nltk.download('punkt', quiet=True)
     sentences = nltk.sent_tokenize(transcript)
-
+    
     def normalize_text(t):
         return [w.strip(string.punctuation).lower() for w in t.split() if w.strip(string.punctuation)]
     ref_words = normalize_text(transcript)
-
+    
     # Step 2: Use Azure Speech SDK to get word-level timestamps for full audio
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
     speech_config.output_format = speechsdk.OutputFormat.Detailed
@@ -296,39 +287,36 @@ if __name__ == "__main__":
     speech_config.set_property(speechsdk.PropertyId.SpeechServiceResponse_PostProcessingOption, "TrueText")
     audio_config = speechsdk.audio.AudioConfig(filename=full_audio_filename)
     speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, language=language, audio_config=audio_config)
-
-    # Global variables for recognition callbacks are already defined (done, recognized_words)
+    
     recognized_words = []
-
-    def stop_cb(evt: speechsdk.SessionEventArgs):
+    def stop_cb(evt):
         global done
         done = True
-
-    def recognized_cb(evt: speechsdk.SpeechRecognitionEventArgs):
+    def recognized_cb(evt):
         if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
             result_json = json.loads(evt.result.json)
             words = result_json["NBest"][0]["Words"]
             recognized_words.extend(words)
         elif evt.result.reason == speechsdk.ResultReason.NoMatch:
             print("No speech recognized for a segment.")
-
+    
     speech_recognizer.recognized.connect(recognized_cb)
     speech_recognizer.session_stopped.connect(stop_cb)
     speech_recognizer.canceled.connect(stop_cb)
-
-    # Reset the global flag before recognition
+    
+    global done
     done = False
     speech_recognizer.start_continuous_recognition()
     while not done:
         time.sleep(0.5)
     speech_recognizer.stop_continuous_recognition()
-
+    
     # Convert HNS (100-nanosecond units) to seconds for each recognized word
     for w in recognized_words:
         w['StartTimeSec'] = w['Offset'] / 10_000_000.0
         w['EndTimeSec'] = (w['Offset'] + w['Duration']) / 10_000_000.0
     hyp_words = [w['Word'].lower() for w in recognized_words]
-
+    
     # Step 3: Align recognized words to transcript words
     s = difflib.SequenceMatcher(None, ref_words, hyp_words)
     ops = s.get_opcodes()
@@ -337,7 +325,7 @@ if __name__ == "__main__":
         if tag in ('equal', 'replace'):
             for ri, hi in zip(range(i1, i2), range(j1, j2)):
                 ref_to_hyp_map[ri] = hi
-
+    
     # Step 4: Determine sentence boundaries using word alignment
     sentence_segments = []
     current_ref_index = 0
@@ -391,8 +379,8 @@ if __name__ == "__main__":
         else:
             end_time = recognized_chunk[-1]['EndTimeSec']
         sentence_segments.append((i, start_time, end_time, sent))
-
-    # Step 5: Segment the full audio into individual sentence files (saved in segments_folder)
+    
+    # Step 5: Segment the full audio into individual sentence files
     segmented_files = []
     for (idx, start_time, end_time, ref_sentence) in sentence_segments:
         out_file = os.path.join(segments_folder, f"sentence{idx}.wav")
@@ -408,14 +396,13 @@ if __name__ == "__main__":
         segmented_files.append((idx, out_file, ref_sentence))
     if not segmented_files:
         print("❌ No sentence segments were created. Check transcript and audio alignment.")
-        sys.exit(1)
-
+        return
+    
     # Step 6: Run pronunciation assessment on each segmented sentence file
     with open(sentence_csv_file, 'w', newline='', encoding='utf-8') as sentence_csv, \
          open(word_csv_file, 'w', newline='', encoding='utf-8') as word_csv:
         sentence_writer = csv.writer(sentence_csv)
         word_writer = csv.writer(word_csv)
-        # Write headers
         sentence_writer.writerow([
             "sentence_index", "reference_text", "recognized_text",
             "accuracy_score", "prosody_score", "pronunciation_score",
@@ -463,4 +450,38 @@ if __name__ == "__main__":
     print("\nDone. CSV outputs saved as:")
     print(f"Sentence-level: {sentence_csv_file}")
     print(f"Word-level: {word_csv_file}")
-    print(f"Segmented sentence audio files are located in: {segments_folder}")
+    print(f"Segmented audio files are in: {segments_folder}")
+
+if __name__ == '__main__':
+    # Define base directories relative to the script's directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dirs = [
+        os.path.join(script_dir, 'folders', 'tcs'),
+        os.path.join(script_dir, 'folders', 'ipe'),
+        os.path.join(script_dir, 'folders', 'capstone'),
+        os.path.join(script_dir, 'folders', 'AIDT')
+    ]
+    
+    for base in base_dirs:
+        if not os.path.isdir(base):
+            print(f"Base directory '{base}' does not exist, skipping.")
+            continue
+        
+        # Iterate over each subfolder (e.g. tcs-w01, tcs-w02) in the base directory
+        for subfolder in os.listdir(base):
+            subfolder_path = os.path.join(base, subfolder)
+            if os.path.isdir(subfolder_path):
+                # Look for an "oneliners" folder inside the subfolder
+                oneliners_dir = os.path.join(subfolder_path, 'oneliners')
+                if os.path.isdir(oneliners_dir):
+                    print(f"\nFound 'oneliners' folder in {subfolder_path}")
+                    # Now iterate over each subfolder within the "oneliners" folder
+                    for folder in os.listdir(oneliners_dir):
+                        folder_path = os.path.join(oneliners_dir, folder)
+                        if os.path.isdir(folder_path):
+                            print(f"Processing subfolder: {folder_path}")
+                            process_oneliners_folder(folder_path)
+                        else:
+                            print(f"Skipping non-folder item in oneliners: {folder_path}")
+                else:
+                    print(f"❌ 'oneliners' folder not found in {subfolder_path}, skipping.")

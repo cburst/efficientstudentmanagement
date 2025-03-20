@@ -2,189 +2,175 @@ import os
 import sys
 import csv
 import subprocess
+from weasyprint import HTML
 from PyPDF2 import PdfMerger
 
 def map_score_to_color(score):
-    """Map the prosody score to a color."""
     try:
         s = float(score)
     except Exception:
         s = 0.0
     if s > 85:
-        return "green"
+        return "#7CFC00"  # Bright green
     elif s > 80:
-        return "yellow"
+        return "#FAFA33"  # Bright yellow
     elif s > 75:
-        return "orange"
+        return "#FF7518"  # Bright orange
     else:
-        return "red"
+        return "#FF0000"  # Bright red
 
-def escape_latex(s):
-    """Escape LaTeX special characters."""
-    return s.replace('\\', r'\textbackslash{}')\
-            .replace('&', r'\&')\
-            .replace('%', r'\%')\
-            .replace('$', r'\$')\
-            .replace('#', r'\#')\
-            .replace('_', ' ')\
-            .replace('{', r'\{')\
-            .replace('}', r'\}')\
-            .replace('~', r'\textasciitilde{}')\
-            .replace('^', r'\^{}')
+def escape_html(s):
+    return (s.replace("&", "&amp;")
+              .replace("<", "&lt;")
+              .replace(">", "&gt;")
+              .replace('"', "&quot;")
+              .replace("'", "&#39;"))
 
 def generate_heatmap_pdf(folder, rows):
-    """Generate the heatmap PDF with user‑adjustable LaTeX formatting."""
-    # Create the highlighted sentences as one LaTeX line.
-    highlighted_sentences = ""
+    # Build sentences block with manual control — you can insert &nbsp; and <br> into this if needed
+    sentences_html = ""
     for idx, row in enumerate(rows):
-        sentence = row.get("recognized_text", "").strip()
+        sentence = escape_html(row.get("recognized_text", "").strip())
         score = row.get("prosody_score", "0").strip()
         color = map_score_to_color(score)
-        color_name = f"tempcolor{idx}"
-        # Build each highlighted sentence.
-        highlighted_sentences += r"{\definecolor{" + color_name + r"}{named}{" + color + r"}" \
-                                 + r"\sethlcolor{" + color_name + r"}\hl{" + escape_latex(sentence) + r"}} "
-    
-    # Write out the LaTeX document as a single multi-line string.
-    latex_content = rf"""\documentclass{{article}}
-\usepackage{{soul}}
-\usepackage{{xcolor}}
-\usepackage[margin=1in]{{geometry}}
-\begin{{document}}
-\large
 
-\indent\indent\textbf{{Analysis notes:}}\newline
-\indent\indent This PDF file contains your text color-coded according to speech quality as measured by the Azure Speech Assessment API. Try to improve your intonation, emphasis, and pronunciation to achieve higher levels of speech quality.\newline\newline
-\indent\indent \textbf{{Contact info:}}\newline
-\indent\indent \begin{{color}}{{teal}} richard.rose@hufs.ac.kr \end{{color}} \newline
-\indent\indent \begin{{color}}{{teal}} richard.rose@yonsei.ac.kr \end{{color}}\newline\newline
-\indent\indent \noindent\textbf{{Speech Quality and Color Scoring System:}}\newline
-\indent\indent {{\definecolor{{keygreen}}{{named}}{{green}}\sethlcolor{{keygreen}}\hl{{~~~~}}}} Score between 85 and 100 \newline
-\indent\indent {{\definecolor{{keyyellow}}{{named}}{{yellow}}\sethlcolor{{keyyellow}}\hl{{~~~~}}}} Score between 80 and 85 \newline
-\indent\indent {{\definecolor{{keyorange}}{{named}}{{orange}}\sethlcolor{{keyorange}}\hl{{~~~~}}}} Score between 75 and 80 \newline
-\indent\indent {{\definecolor{{keyred}}{{named}}{{red}}\sethlcolor{{keyred}}\hl{{~~~~}}}} Score below 75 \newline \newline
-\indent\indent \textbf{{Your text:}}
+        if idx > 0:
+            sentences_html += " "  # Space between sentences (but you can add <br> here if you want line breaks)
+        sentences_html += f'<span style="background-color: {color};">{sentence}</span>'
 
-\indent\indent {highlighted_sentences}
+    # Completely flush-left HTML, but with bold section headers
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            @page {{
+                size: A4 portrait;
+                margin: 1in;
+            }}
+            body {{
+                font-family: Arial, sans-serif;
+                font-size: 14pt;
+                line-height: 1.3;
+            }}
+            .color-box {{
+                display: inline-block;
+                width: 30px;
+                height: 15px;
+                margin-right: 5px;
+            }}
+            .bold {{
+                font-weight: bold;
+            }}
+        </style>
+    </head>
+    <body>
 
-\end{{document}}
-"""
-    # Write the LaTeX content to a file.
-    tex_filename = "heatmap.tex"
-    tex_path = os.path.join(folder, tex_filename)
-    with open(tex_path, "w", encoding="utf-8") as f:
-        f.write(latex_content)
-    
-    # Compile the document twice.
-    for i in range(2):
-        subprocess.run(["pdflatex", "-interaction=nonstopmode", tex_filename], cwd=folder)
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bold">Analysis notes:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This PDF contains your text color-coded according to speech quality as measured by the Azure Speech Assessment API. Try to improve your intonation, emphasis, and pronunciation to achieve higher levels of speech quality.<br><br>
 
-def create_sentences_pdf(folder, rows):
-    """Generate the sentence-level PDF."""
-    latex_lines = [
-        r"\documentclass{article}",
-        r"\usepackage{longtable}",
-        r"\usepackage{array}",
-        r"\usepackage{pdflscape}",
-        r"\usepackage[margin=1in]{geometry}",
-        r"\usepackage{makecell}",
-        r"\pagestyle{empty}",
-        r"\renewcommand{\arraystretch}{1.3}",
-        r"\begin{document}",
-        r"\begin{landscape}",
-        r"\section*{Sentence Level Data}",
-        r"\footnotesize"
-    ]
+    <span class="bold">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Contact info:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;richard.rose@hufs.ac.kr<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;richard.rose@yonsei.ac.kr<br><br>
 
-    headers = list(rows[0].keys())
-    column_widths = ['p{1.5cm}', 'p{5cm}', 'p{5cm}', 'p{1.5cm}', 'p{1.5cm}', 'p{2.5cm}', 'p{2.5cm}', 'p{1.5cm}']
-    formatted_headers = [r"\textbf{" + escape_latex(h) + "}" for h in headers]
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bold">Speech Quality and Color Scoring System:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="color-box" style="background-color: #7CFC00;"></span> Score between 85 and 100<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="color-box" style="background-color: #FAFA33;"></span> Score between 80 and 85<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="color-box" style="background-color: #FF7518;"></span> Score between 75 and 80<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="color-box" style="background-color: #FF0000;"></span> Score below 75<br><br>
 
-    latex_lines.append(r"\begin{longtable}{" + "|".join(column_widths) + r"|}")
-    latex_lines.append(r"\hline")
-    latex_lines.append(" & ".join(formatted_headers) + r" \\ \hline")
-    latex_lines.append(r"\endfirsthead")
-    latex_lines.append(r"\hline " + " & ".join(formatted_headers) + r" \\ \hline")
-    latex_lines.append(r"\endhead")
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bold">Your text:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{sentences_html}
 
+    </body>
+    </html>
+    """
+
+    pdf_path = os.path.join(folder, "heatmap.pdf")
+    HTML(string=html_content).write_pdf(pdf_path)
+    print(f"Generated heatmap PDF at {pdf_path}")
+
+def generate_table_pdf(folder, rows, section_title, filename, landscape=False, wide_columns=None):
+    headers = rows[0].keys()
+
+    page_size = "A4 landscape" if landscape else "A4 portrait"
+
+    processed_headers = [h.replace("_", " ") for h in headers]
+
+    col_widths = []
+    for idx, h in enumerate(headers):
+        if wide_columns and idx in wide_columns:
+            col_widths.append("width: 30%;")
+        else:
+            col_widths.append("width: auto;")
+
+    table_rows = ""
     for row in rows:
-        row_data = [escape_latex(str(row.get(h, ""))) for h in headers]
-        latex_lines.append(" & ".join(row_data) + r" \\ \hline")
+        table_rows += "<tr>" + "".join(
+            f'<td style="{col_widths[idx]}">{escape_html(str(row.get(h, "")))}</td>'
+            for idx, h in enumerate(headers)
+        ) + "</tr>"
 
-    latex_lines += [
-        r"\end{longtable}",
-        r"\end{landscape}",
-        r"\end{document}"
-    ]
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            @page {{
+                size: {page_size};
+                margin: 1in;
+            }}
+            body {{
+                font-family: Arial, sans-serif;
+                font-size: 10pt;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                page-break-inside: avoid;
+            }}
+            th, td {{
+                border: 1px solid black;
+                padding: 5px;
+                text-align: left;
+                vertical-align: top;
+            }}
+            th {{
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }}
+            thead {{
+                display: table-header-group;
+            }}
+            tr {{
+                page-break-inside: avoid;
+            }}
+            .section-title-header {{
+                font-weight: bold;
+                font-size: 12pt;
+                background-color: #e0e0e0;
+                text-align: left;
+                padding: 5px;
+            }}
+        </style>
+    </head>
+    <body>
+        <table>
+            <thead>
+                <tr><th colspan="{len(headers)}" class="section-title-header">{section_title}</th></tr>
+                <tr>{''.join(f'<th>{escape_html(h)}</th>' for h in processed_headers)}</tr>
+            </thead>
+            <tbody>
+                {table_rows}
+            </tbody>
+        </table>
+    </body>
+    </html>
+    """
 
-    tex_filename = "sentences.tex"
-    tex_path = os.path.join(folder, tex_filename)
-    with open(tex_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(latex_lines))
-
-    for i in range(2):
-        subprocess.run(["pdflatex", "-interaction=nonstopmode", tex_filename], cwd=folder)
-
-def create_words_pdf(folder, word_csv_path):
-    """Generate the word-level PDF."""
-    temp_csv_path = os.path.join(folder, "word_level_results_temp.csv")
-    
-    with open(word_csv_path, 'r', encoding='utf-8') as infile, open(temp_csv_path, 'w', encoding='utf-8', newline='') as outfile:
-        reader = csv.reader(infile)
-        writer = csv.writer(outfile)
-        for row in reader:
-            new_row = [cell.replace('_', ' ') for cell in row]
-            writer.writerow(new_row)
-
-    rows = []
-    with open(temp_csv_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            rows.append(row)
-
-    latex_lines = [
-        r"\documentclass{article}",
-        r"\usepackage{longtable}",
-        r"\usepackage{array}",
-        r"\usepackage[margin=1in]{geometry}",
-        r"\usepackage{makecell}",
-        r"\pagestyle{empty}",
-        r"\renewcommand{\arraystretch}{1.3}",
-        r"\begin{document}",
-        r"\section*{Word Level Data}",
-        r"\normalsize"
-    ]
-
-    headers = list(rows[0].keys())
-    column_widths = ['p{2cm}' if idx in [0, 1, 3] else 'p{3.3cm}' if idx == 4 else 'p{2.5cm}' for idx in range(len(headers))]
-    formatted_headers = [r"\textbf{" + escape_latex(h) + "}" for h in headers]
-
-    latex_lines.append(r"\begin{longtable}{" + "|".join(column_widths) + r"|}")
-    latex_lines.append(r"\hline")
-    latex_lines.append(" & ".join(formatted_headers) + r" \\ \hline")
-    latex_lines.append(r"\endfirsthead")
-    latex_lines.append(r"\hline " + " & ".join(formatted_headers) + r" \\ \hline")
-    latex_lines.append(r"\endhead")
-
-    for row in rows:
-        row_data = [escape_latex(str(row.get(h, ""))) for h in headers]
-        latex_lines.append(" & ".join(row_data) + r" \\ \hline")
-
-    latex_lines += [
-        r"\end{longtable}",
-        r"\end{document}"
-    ]
-
-    tex_filename = "words.tex"
-    tex_path = os.path.join(folder, tex_filename)
-    with open(tex_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(latex_lines))
-
-    for i in range(2):
-        subprocess.run(["pdflatex", "-interaction=nonstopmode", tex_filename], cwd=folder)
+    pdf_path = os.path.join(folder, filename)
+    HTML(string=html_content).write_pdf(pdf_path)
+    print(f"Generated {filename} at {pdf_path}")
 
 def merge_pdfs(folder):
-    """Merge the three generated PDFs into one."""
     merger = PdfMerger()
     pdf_files = ["heatmap.pdf", "sentences.pdf", "words.pdf"]
 
@@ -192,123 +178,59 @@ def merge_pdfs(folder):
         pdf_path = os.path.join(folder, pdf)
         if os.path.isfile(pdf_path):
             merger.append(pdf_path)
-        else:
-            print(f"Warning: {pdf} not found, skipping.")
 
-    output_path = os.path.join(folder, "heatmap-and-tables.pdf")
-    merger.write(output_path)
+    combined_path = os.path.join(folder, "analysis.pdf")
+    merger.write(combined_path)
     merger.close()
-    print(f"Combined PDF created at {output_path}")
-    
-    # Rename the merged PDF to analysis.pdf for the email attachment
-    analysis_pdf = os.path.join(folder, "analysis.pdf")
-    os.replace(output_path, analysis_pdf)
-    print(f"Renamed merged PDF to {analysis_pdf}")
+    print(f"Created combined PDF at {combined_path}")
 
-def send_email_with_applescript(folder_path):
-    """
-    Generates and runs an AppleScript that sends an email using email.txt, name.txt, and analysis.pdf 
-    in the given folder path.
-    """
+def send_email_with_applescript(folder):
     applescript_code = f'''
-    -- Use the folder path directly since it's already in POSIX format
-    set targetFolder to "{folder_path}"
-    
-    -- Build the file paths by adding a slash if needed
-    set emailFilePath to targetFolder & "/email.txt"
-    set nameFilePath to targetFolder & "/name.txt"
-    set analysisPDFPath to targetFolder & "/analysis.pdf"
-    
-    -- Attempt to read the email address from email.txt
-    try
-        set emailaddy to do shell script "cat " & quoted form of emailFilePath
-    on error errMsg
-        display dialog "Error reading email.txt: " & errMsg buttons {{"OK"}} default button "OK"
-        return
-    end try
+    set folderPath to "{folder}"
+    set emailFilePath to folderPath & "/email.txt"
+    set nameFilePath to folderPath & "/name.txt"
+    set pdfPath to folderPath & "/analysis.pdf"
 
-    if emailaddy is "" then
-        display dialog "email.txt is empty. Please enter a valid email address." buttons {{"OK"}} default button "OK"
-        return
-    end if
+    set emailaddy to do shell script "cat " & quoted form of emailFilePath
+    set nameFileContent to do shell script "cat " & quoted form of nameFilePath
 
-    -- Read the name from name.txt
-    try
-        set nameFileContent to do shell script "cat " & quoted form of nameFilePath
-    on error
-        set nameFileContent to "Name not found"
-    end try
-
-    set greeting to "Hi " & nameFileContent & ","
-    set currentDate to current date
-    set formattedDate to (currentDate as string)
-    
     tell application "Mail"
-        set newMessage to make new outgoing message with properties {{subject:"Speech Quality Analysis - " & formattedDate, content:greeting & return & return & "Thank you for sending your recorded audio and document information for analysis." & return & "The audio and document analysis file is attached for your consideration." & return & "Please let me know if you have any further questions." & return & return & "Best regards," & return & "Dr. Rose", visible:true}}
-        
+        set newMessage to make new outgoing message with properties {{subject:"Speech Quality Analysis", content:"Hi " & nameFileContent & ",\\n\\nPlease find your speech quality analysis attached.", visible:true}}
         tell newMessage
             make new to recipient at end of to recipients with properties {{address:emailaddy}}
-            try
-                -- Convert the PDF path to an alias and attach it to the message content
-                set attachmentFile to POSIX file analysisPDFPath as alias
-                tell content
-                    make new attachment with properties {{file name:attachmentFile}} at after last paragraph
-                end tell
-            on error errMsg
-                display dialog "Error attaching analysis.pdf: " & errMsg buttons {{"OK"}} default button "OK"
-            end try
+            make new attachment with properties {{file name:(POSIX file pdfPath as alias)}} at after last paragraph
         end tell
-        
-        activate
         send newMessage
     end tell
     '''
-    
-    script_path = os.path.join(folder_path, "send_email.applescript")
+
+    script_path = os.path.join(folder, "send_email.applescript")
     with open(script_path, "w") as script_file:
         script_file.write(applescript_code)
-    
-    try:
-        subprocess.run(["osascript", script_path], check=True)
-        print(f"Executed AppleScript to send email from {folder_path}")
-    except subprocess.CalledProcessError as e:
-        print(f"Error running AppleScript: {e}")
+
+    subprocess.run(["osascript", script_path])
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python combined_script.py <folder>")
+        print("Usage: python script.py <folder>")
         sys.exit(1)
 
     folder = sys.argv[1]
-    if not os.path.isdir(folder):
-        print(f"Error: {folder} is not a valid directory.")
-        sys.exit(1)
-
-    # Load sentence-level CSV
     sentence_csv = os.path.join(folder, "sentence_level_results.csv")
     word_csv = os.path.join(folder, "word_level_results.csv")
-    
-    if not os.path.isfile(sentence_csv):
-        print(f"Error: {sentence_csv} not found.")
-        sys.exit(1)
 
     with open(sentence_csv, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        rows = [row for row in reader]
+        rows = list(csv.DictReader(f))
 
-    # Generate PDFs
     generate_heatmap_pdf(folder, rows)
-    create_sentences_pdf(folder, rows)
+    generate_table_pdf(folder, rows, "Sentence Level Data", "sentences.pdf", landscape=True, wide_columns=[1, 2])
 
     if os.path.isfile(word_csv):
-        create_words_pdf(folder, word_csv)
-    else:
-        print(f"Warning: {word_csv} not found, skipping word-level PDF.")
+        with open(word_csv, newline="", encoding="utf-8") as f:
+            word_rows = list(csv.DictReader(f))
+        generate_table_pdf(folder, word_rows, "Word Level Data", "words.pdf")
 
-    # Merge PDFs and rename merged file to analysis.pdf for email attachment
     merge_pdfs(folder)
-
-    # Send the email using the AppleScript
     send_email_with_applescript(folder)
 
 if __name__ == "__main__":
